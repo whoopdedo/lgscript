@@ -37,6 +37,7 @@
 #define LUA_USE_POSIX
 #define LUA_USE_DLOPEN		/* needs an extra library: -ldl */
 #define LUA_USE_READLINE	/* needs some extra libraries */
+#define LUA_USE_GETTIMEOFDAY
 #endif
 
 #if defined(LUA_USE_MACOSX)
@@ -44,6 +45,9 @@
 #define LUA_DL_DYLD		/* does not need extra library */
 #endif
 
+#if defined(LUA_WIN)
+#define LUA_USE_FTIME
+#endif
 
 
 /*

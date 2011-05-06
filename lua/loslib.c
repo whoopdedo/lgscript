@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 
 #define loslib_c
 #define LUA_LIB
@@ -18,7 +19,9 @@
 
 #include "lauxlib.h"
 #include "lualib.h"
-
+#ifdef LUA_USE_FTIME
+#include <sys/timeb.h>
+#endif
 
 static int os_pushresult (lua_State *L, int i, const char *filename) {
   int en = errno;  /* calls to Lua API may change this value */
@@ -169,8 +172,24 @@ static int os_date (lua_State *L) {
 
 static int os_time (lua_State *L) {
   time_t t;
-  if (lua_isnoneornil(L, 1))  /* called without args? */
-    t = time(NULL);  /* get current time */
+  if (lua_isnoneornil(L, 1)) { /* called without args? */
+#ifdef LUA_USE_GETTIMEOFDAY
+    struct timeval tv;
+    if (0 == gettimeofday(&tv, NULL)) {
+      lua_pushnumber(L, (lua_Number)tv.tv_sec + (lua_Number)tv.tv_usec * 0.000001);
+      return 1;
+    }
+    else
+      t = time(NULL);  /* get current time */
+#elif defined(LUA_USE_FTIME)
+    struct _timeb tb;
+    _ftime(&tb);
+    lua_pushnumber(L, (lua_Number)tb.time + (lua_Number)tb.millitm * 0.001);
+    return 1;
+#else
+     t = time(NULL);  /* get current time */
+#endif
+  }
   else {
     struct tm ts;
     luaL_checktype(L, 1, LUA_TTABLE);
