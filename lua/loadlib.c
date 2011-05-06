@@ -94,6 +94,13 @@ static lua_CFunction ll_sym (lua_State *L, void *lib, const char *sym) {
 
 #undef setprogdir
 
+/*
+** optional flags for LoadLibraryEx
+*/
+#if !defined(LUA_LLE_FLAGS)
+#define LUA_LLE_FLAGS	LOAD_WITH_ALTERED_SEARCH_PATH
+#endif
+
 static void setprogdir (lua_State *L) {
   char buff[MAX_PATH + 1];
   char *lb;
@@ -125,7 +132,7 @@ static void ll_unloadlib (void *lib) {
 
 
 static void *ll_load (lua_State *L, const char *path) {
-  HINSTANCE lib = LoadLibraryA(path);
+  HMODULE lib = LoadLibraryExA(path, NULL, LUA_LLE_FLAGS);
   if (lib == NULL) pusherror(L);
   return lib;
 }

@@ -207,7 +207,8 @@ static int math_random (lua_State *L) {
 
 
 static int math_randomseed (lua_State *L) {
-  srand(luaL_checkint(L, 1));
+  srand(luaL_checknumber(L, 1));
+  (void)rand();
   return 0;
 }
 
