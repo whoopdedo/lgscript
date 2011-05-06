@@ -434,8 +434,22 @@ LUALIB_API char *luaL_prepbuffer (luaL_Buffer *B) {
 
 
 LUALIB_API void luaL_addlstring (luaL_Buffer *B, const char *s, size_t l) {
-  while (l--)
-    luaL_addchar(B, *s++);
+  if (l <= bufffree(B)) {
+    memcpy(B->p, s, l);
+    B->p += l;
+  }
+  else {
+    emptybuffer(B);
+    if (l <= LUAL_BUFFERSIZE) {
+      memcpy(B->p, s, l);
+      B->p += l;
+    }
+    else {
+      lua_pushlstring(B->L, s, l);
+      B->lvl++;  /* add new value into B stack */
+    }
+    adjuststack(B);
+  }
 }
 
 
