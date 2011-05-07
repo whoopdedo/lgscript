@@ -85,8 +85,8 @@
 ** non-conventional directories.
 */
 #if defined(LUA_SCRIPT)
-#define LUA_LDIR	"!\\script\\"
-#define LUA_CDIR	"!\\script\\"
+#define LUA_LDIR	"!\\scripts\\"
+#define LUA_CDIR	"!\\scripts\\"
 #define LUA_PATH_DEFAULT  \
 		LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;"
 #define LUA_CPATH_DEFAULT \
