@@ -84,7 +84,15 @@
 ** hierarchy or if you want to install your libraries in
 ** non-conventional directories.
 */
-#if defined(_WIN32)
+#if defined(LUA_SCRIPT)
+#define LUA_LDIR	"!\\script\\"
+#define LUA_CDIR	"!\\script\\"
+#define LUA_PATH_DEFAULT  \
+		LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;"
+#define LUA_CPATH_DEFAULT \
+		LUA_CDIR"?.osl;" LUA_CDIR"loadall.osl"
+
+#elif defined(_WIN32)
 /*
 ** In Windows, any exclamation mark ('!') in the path is replaced by the
 ** path of the directory of the executable file of the current process.
@@ -133,7 +141,11 @@
 ** characters. (E.g., if one of those characters is a common character
 ** in file/directory names.) Probably you do not need to change them.
 */
-#define LUA_PATHSEP	";"
+#if defined(LUA_SCRIPT)
+#define LUA_PATHSEP	"+"
+#else
+ #define LUA_PATHSEP	";"
+#endif
 #define LUA_PATH_MARK	"?"
 #define LUA_EXECDIR	"!"
 #define LUA_IGMARK	"-"
@@ -337,14 +349,14 @@
 ** CHANGE it to undefined as soon as your programs use only '...' to
 ** access vararg parameters (instead of the old 'arg' table).
 */
-#define LUA_COMPAT_VARARG
+#undef LUA_COMPAT_VARARG
 
 /*
 @@ LUA_COMPAT_MOD controls compatibility with old math.mod function.
 ** CHANGE it to undefined as soon as your programs use 'math.fmod' or
 ** the new '%' operator instead of 'math.mod'.
 */
-#define LUA_COMPAT_MOD
+#undef LUA_COMPAT_MOD
 
 /*
 @@ LUA_COMPAT_LSTR controls compatibility with old long string nesting
@@ -352,14 +364,14 @@
 ** CHANGE it to 2 if you want the old behaviour, or undefine it to turn
 ** off the advisory error when nesting [[...]].
 */
-#define LUA_COMPAT_LSTR		1
+#undef LUA_COMPAT_LSTR
 
 /*
 @@ LUA_COMPAT_GFIND controls compatibility with old 'string.gfind' name.
 ** CHANGE it to undefined as soon as you rename 'string.gfind' to
 ** 'string.gmatch'.
 */
-#define LUA_COMPAT_GFIND
+#undef LUA_COMPAT_GFIND
 
 /*
 @@ LUA_COMPAT_OPENLIB controls compatibility with old 'luaL_openlib'
@@ -367,7 +379,7 @@
 ** CHANGE it to undefined as soon as you replace to 'luaL_register'
 ** your uses of 'luaL_openlib'
 */
-#define LUA_COMPAT_OPENLIB
+#undef LUA_COMPAT_OPENLIB
 
 
 
@@ -705,7 +717,7 @@ union luai_Cast { double l_d; long l_l; };
 #define LUA_DL_DLOPEN
 #endif
 
-#if defined(LUA_WIN)
+#if defined(LUA_WIN) && !defined(LGSCRIPT)
 #define LUA_DL_DLL
 #endif
 
@@ -761,6 +773,13 @@ union luai_Cast { double l_d; long l_l; };
 ** without modifying the main part of the file.
 */
 
+#ifdef LGSCRIPT
+
+#ifdef loadlib_c
+#define getenv(x)	NULL
+#endif
+
+#endif
 
 
 #endif
