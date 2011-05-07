@@ -574,6 +574,30 @@ int luaH_getn (Table *t) {
     return j;  /* that is easy... */
   else return unbound_search(t, j);
 }
+ 
+ 
+/*
+** get first n where t[n] = v
+** start search at key
+*/
+int luaH_find (lua_State *L, Table *t, const TValue *val, StkId key) {
+  int i = findindex(L, t, key);  /* find original element */
+  for (i++; i < t->sizearray; i++) {  /* try first array part */
+    if (!ttisnil(&t->array[i]) &&
+          luaO_rawequalObj(&t->array[i], val)) {  /* a non-nil value? */
+      setnvalue(key, cast_num(i+1));
+      return 1;
+    }
+  }
+  for (i -= t->sizearray; i < sizenode(t); i++) {  /* then hash part */
+    if (!ttisnil(gval(gnode(t, i))) &&
+          luaO_rawequalObj(gval(gnode(t, i)), val)) {  /* a non-nil value? */
+      setobj2s(L, key, key2tval(gnode(t, i)));
+      return 1;
+    }
+  }
+  return 0;  /* no more elements */
+}
 
 
 

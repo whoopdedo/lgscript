@@ -1004,6 +1004,24 @@ LUA_API void lua_concat (lua_State *L, int n) {
 }
 
 
+LUA_API int lua_find (lua_State *L, int idx) {
+  StkId t;
+  int found = 0;
+  lua_lock(L);
+  t = index2adr(L, idx);
+  api_check(L, ttistable(t));
+  found = luaH_find(L, hvalue(t), L->top - 2, L->top - 1);
+  if (found) {
+    setobjs2s(L, L->top - 2, L->top - 1);
+    L->top -= 1;
+  }
+  else
+    L->top -= 2;
+  lua_unlock(L);
+  return found;
+}
+
+
 LUA_API lua_Alloc lua_getallocf (lua_State *L, void **ud) {
   lua_Alloc f;
   lua_lock(L);
