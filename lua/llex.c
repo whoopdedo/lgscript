@@ -427,10 +427,10 @@ static int llex (LexState *ls, SemInfo *seminfo) {
           } while (isalnum(ls->current) || ls->current == '_');
           ts = luaX_newstring(ls, luaZ_buffer(ls->buff),
                                   luaZ_bufflen(ls->buff));
+          seminfo->ts = ts;
           if (ts->tsv.reserved > 0)  /* reserved word? */
             return ts->tsv.reserved - 1 + FIRST_RESERVED;
           else {
-            seminfo->ts = ts;
             return TK_NAME;
           }
         }

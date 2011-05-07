@@ -114,6 +114,18 @@ static void check_match (LexState *ls, int what, int who, int where) {
 }
 
 
+static TString *expect_name (LexState *ls) {
+  TString *ts;
+  if (ls->t.token != TK_NAME &&
+      !(ls->t.token >= FIRST_RESERVED && ls->t.token < FIRST_RESERVED+NUM_RESERVED))
+    error_expected(ls, TK_NAME);
+  ls->t.token = TK_NAME;
+  ts = ls->t.seminfo.ts;
+  luaX_next(ls);
+  return ts;
+}
+
+
 static TString *str_checkname (LexState *ls) {
   TString *ts;
   check(ls, TK_NAME);
@@ -245,8 +257,7 @@ static int singlevaraux (FuncState *fs, TString *n, expdesc *var, int base) {
 }
 
 
-static void singlevar (LexState *ls, expdesc *var) {
-  TString *varname = str_checkname(ls);
+static void singlevar (LexState *ls, expdesc *var, TString *varname) {
   FuncState *fs = ls->fs;
   if (singlevaraux(fs, varname, var, 1) == VGLOBAL)
     var->u.s.info = luaK_stringK(fs, varname);  /* info points to global name */
@@ -404,13 +415,30 @@ Proto *luaY_parser (lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
 /*============================================================*/
 
 
+static TString *namelit (LexState *ls) {
+  /* namelit -> NAME | reserved word | '[' String ']' */
+  TString *ts;
+  if (ls->t.token == '[') {
+    luaX_next(ls);
+    check(ls, TK_STRING);
+    ts = ls->t.seminfo.ts;
+    luaX_next(ls);
+    checknext(ls, ']');
+  }
+  else {
+    ts = expect_name(ls);
+  }
+  return ts;
+}
+
+
 static void field (LexState *ls, expdesc *v) {
   /* field -> ['.' | ':'] NAME */
   FuncState *fs = ls->fs;
   expdesc key;
   luaK_exp2anyreg(fs, v);
   luaX_next(ls);  /* skip the dot or colon */
-  checkname(ls, &key);
+  codestring(ls, &key, namelit(ls));
   luaK_indexed(fs, v, &key);
 }
 
@@ -448,7 +476,7 @@ static void recfield (LexState *ls, struct ConsControl *cc) {
   int rkkey;
   if (ls->t.token == TK_NAME) {
     luaY_checklimit(fs, cc->nh, MAX_INT, "items in a constructor");
-    checkname(ls, &key);
+    codestring(ls, &key, str_checkname(ls));
   }
   else  /* ls->t.token == '[' */
     yindex(ls, &key);
@@ -549,10 +577,6 @@ static void parlist (LexState *ls) {
   if (ls->t.token != ')') {  /* is `parlist' not empty? */
     do {
       switch (ls->t.token) {
-        case TK_NAME: {  /* param -> NAME */
-          new_localvar(ls, str_checkname(ls), nparams++);
-          break;
-        }
         case TK_DOTS: {  /* param -> `...' */
           luaX_next(ls);
 #if defined(LUA_COMPAT_VARARG)
@@ -563,7 +587,13 @@ static void parlist (LexState *ls) {
           f->is_vararg |= VARARG_ISVARARG;
           break;
         }
-        default: luaX_syntaxerror(ls, "<name> or " LUA_QL("...") " expected");
+        default: {  /* param -> NAME */
+          TString *ts = namelit(ls);
+          if (!ts)
+            luaX_syntaxerror(ls, "<name> or " LUA_QL("...") " expected");
+          new_localvar(ls, ts, nparams++);
+          break;
+        }
       }
     } while (!f->is_vararg && testnext(ls, ','));
   }
@@ -675,12 +705,8 @@ static void prefixexp (LexState *ls, expdesc *v) {
       luaK_dischargevars(ls->fs, v);
       return;
     }
-    case TK_NAME: {
-      singlevar(ls, v);
-      return;
-    }
     default: {
-      luaX_syntaxerror(ls, "unexpected symbol");
+      singlevar(ls, v, namelit(ls));
       return;
     }
   }
@@ -700,6 +726,8 @@ static void primaryexp (LexState *ls, expdesc *v) {
       }
       case '[': {  /* `[' exp1 `]' */
         expdesc key;
+        if (ls->linenumber != ls->lastline)
+          luaX_syntaxerror(ls,"ambiguous syntax (table field x name literal)");
         luaK_exp2anyreg(fs, v);
         yindex(ls, &key);
         luaK_indexed(fs, v, &key);
@@ -708,7 +736,7 @@ static void primaryexp (LexState *ls, expdesc *v) {
       case ':': {  /* `:' NAME funcargs */
         expdesc key;
         luaX_next(ls);
-        checkname(ls, &key);
+        codestring(ls, &key, namelit(ls));
         luaK_self(fs, v, &key);
         funcargs(ls, v);
         break;
@@ -1100,7 +1128,7 @@ static void forlist (LexState *ls, TString *indexname) {
   /* create declared variables */
   new_localvar(ls, indexname, nvars++);
   while (testnext(ls, ','))
-    new_localvar(ls, str_checkname(ls), nvars++);
+    new_localvar(ls, namelit(ls), nvars++);
   checknext(ls, TK_IN);
   line = ls->linenumber;
   adjust_assign(ls, 3, explist1(ls, &e), &e);
@@ -1116,7 +1144,7 @@ static void forstat (LexState *ls, int line) {
   BlockCnt bl;
   enterblock(fs, &bl, 1);  /* scope for loop and control variables */
   luaX_next(ls);  /* skip `for' */
-  varname = str_checkname(ls);  /* first variable name */
+  varname = namelit(ls);  /* first variable name */
   switch (ls->t.token) {
     case '=': fornum(ls, varname, line); break;
     case ',': case TK_IN: forlist(ls, varname); break;
@@ -1165,7 +1193,7 @@ static void ifstat (LexState *ls, int line) {
 static void localfunc (LexState *ls) {
   expdesc v, b;
   FuncState *fs = ls->fs;
-  new_localvar(ls, str_checkname(ls), 0);
+  new_localvar(ls, namelit(ls), 0);
   init_exp(&v, VLOCAL, fs->freereg);
   luaK_reserveregs(fs, 1);
   adjustlocalvars(ls, 1);
@@ -1182,7 +1210,7 @@ static void localstat (LexState *ls) {
   int nexps;
   expdesc e;
   do {
-    new_localvar(ls, str_checkname(ls), nvars++);
+    new_localvar(ls, namelit(ls), nvars++);
   } while (testnext(ls, ','));
   if (testnext(ls, '='))
     nexps = explist1(ls, &e);
@@ -1198,7 +1226,7 @@ static void localstat (LexState *ls) {
 static int funcname (LexState *ls, expdesc *v) {
   /* funcname -> NAME {field} [`:' NAME] */
   int needself = 0;
-  singlevar(ls, v);
+  singlevar(ls, v, namelit(ls));
   while (ls->t.token == '.')
     field(ls, v);
   if (ls->t.token == ':') {
