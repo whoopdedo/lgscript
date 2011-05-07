@@ -2,7 +2,7 @@
 ##    Makefile-gcc
 ##
 ##    This file is part of LgScript
-##    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+##    Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
 ##
 ##    This program is free software; you can redistribute it and/or modify
 ##    it under the terms of the GNU General Public License as published by
@@ -25,8 +25,6 @@
 .SUFFIXES: .o .cpp .rc
 .PRECIOUS: %.o
 
-GAME = 2
-
 srcdir = .
 bindir = ./bin
 
@@ -36,9 +34,10 @@ DH2DIR = ../DH2
 DH2LIB = -ldh2
 
 LUADIR = ./lua
+LUAMOD = ./mod
 LUAFLAGS =  -W -Wall
-LUADEF = -DLUA_WIN -DLUA_ANSI -DLUA_SCRIPT -DLUA_NOTERM
-LUADEF2 = -DLUA_WIN -DLUA_ANSI -DLUA_SCRIPT
+LUADEF = -DLUA_WIN -DLUA_ANSI -DLGSCRIPT
+LUADEF2 = -DLUA_WIN -DLUA_ANSI -DLGSCRIPT -DLUA_NOTERM
 LUADEBUG =
 LUAINC = -I$(srcdir) -I$(LUADIR)
 LUA_SRCS = $(LUADIR)/lapi.c $(LUADIR)/lapi.h \
@@ -60,21 +59,24 @@ LUA_SRCS = $(LUADIR)/lapi.c $(LUADIR)/lapi.h \
 	$(LUADIR)/lundump.c $(LUADIR)/lundump.h \
 	$(LUADIR)/lvm.c $(LUADIR)/lvm.h \
 	$(LUADIR)/lzio.c $(LUADIR)/lzio.h \
-	$(LUADIR)/lctype.c $(LUADIR)/lctype.h \
 	$(LUADIR)/lmathlib.c \
 	$(LUADIR)/ltablib.c \
 	$(LUADIR)/lstrlib.c \
 	$(LUADIR)/loadlib.c \
-	$(LUADIR)/vec.c $(LUADIR)/vec.h \
 	$(LUADIR)/lauxlib.c $(LUADIR)/lauxlib.h \
 	$(LUADIR)/lbaselib.c \
 	$(LUADIR)/ldblib.c \
 	$(LUADIR)/liolib.c \
 	$(LUADIR)/loslib.c \
-	$(LUADIR)/linit.c \
 	$(LUADIR)/llimits.h \
 	$(LUADIR)/lualib.h \
-	$(LUADIR)/luaconf.h
+	$(LUADIR)/luaconf.h \
+	$(LUADIR)/lua.h \
+	$(LUAMOD)/vec.c \
+	$(LUAMOD)/llist.c \
+	$(LUAMOD)/lext.c \
+	$(LUAMOD)/modlib.c \
+	$(LUAMOD)/modlib.h
 LUA_OBJS = $(bindir)/lapi.o \
 	$(bindir)/lcode.o \
 	$(bindir)/ldebug.o \
@@ -94,26 +96,25 @@ LUA_OBJS = $(bindir)/lapi.o \
 	$(bindir)/lundump.o \
 	$(bindir)/lvm.o \
 	$(bindir)/lzio.o \
-	$(bindir)/lctype.o \
 	$(bindir)/lmathlib.o \
 	$(bindir)/ltablib.o \
 	$(bindir)/lstrlib.o \
 	$(bindir)/loadlib.o \
-	$(bindir)/vec.o
+	$(bindir)/vec.o \
+	$(bindir)/llist.o \
+	$(bindir)/lext.o
 LUA_OBJ1 = \
-	$(bindir)/lauxlib.o \
-	$(bindir)/lbaselib.o \
-	$(bindir)/ldblib.o \
+	$(bindir)/lauxlib1.o \
+	$(bindir)/lbaselib1.o \
+	$(bindir)/ldblib1.o \
+	$(bindir)/modlib1.o
+LUA_OBJ2 = \
 	$(bindir)/liolib.o \
 	$(bindir)/loslib.o \
-	$(bindir)/linit.o
-LUA_OBJ2 = \
 	$(bindir)/lauxlib2.o \
 	$(bindir)/lbaselib2.o \
 	$(bindir)/ldblib2.o \
-	$(bindir)/liolib2.o \
-	$(bindir)/loslib2.o \
-	$(bindir)/linit2.o
+	$(bindir)/modlib2.o
 LUAX = $(srcdir)/luax.h $(srcdir)/luax.hpp
 LUAX_SRCS = $(srcdir)/luax.cpp $(srcdir)/luax.h $(srcdir)/luax.hpp
 LUAX_OBJ = $(bindir)/luax.o
@@ -155,10 +156,8 @@ LDFLAGS = -mwindows -mdll -Wl,--enable-auto-image-base
 LIBDIRS = -L. -L$(LGDIR) -L$(SCRLIBDIR) -L$(DH2DIR)
 LIBS = $(DH2LIB) $(LGLIB) -luuid
 INCLUDES = -I$(srcdir) $(LUAINC) -I$(LGDIR) -I$(SCRLIBDIR) -I$(DH2DIR)
-# If you care for this... # -Wno-unused-variable
-# A lot of the callbacks have unused parameters, so I turn that off.
-CXXFLAGS =  -W -Wall -masm=intel -Wno-invalid-offsetof
-DLLFLAGS =  --add-underscore
+CXXFLAGS = -W -Wall -masm=intel -Wno-invalid-offsetof
+DLLFLAGS = --add-underscore
 DLLDEF = $(srcdir)/script.def
 
 LGS_SRCS = \
@@ -204,6 +203,9 @@ $(bindir)/%_res.o: $(srcdir)/%.rc
 $(bindir)/%.o: $(LUADIR)/%.c
 	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) -o $@ -c $<
 
+$(bindir)/%.o: $(LUAMOD)/%.c
+	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) -o $@ -c $<
+
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME2) $(INCLUDES) -o $@ -c $<
 
@@ -235,7 +237,7 @@ $(bindir)/exports.o: $(bindir)/ScriptModule.o
 lgs.osm: $(LGS_OBJS) $(OSM_OBJS) $(RES_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ1)
 	$(LD) $(LDFLAGS) -Wl,--image-base=0x11400000 $(LDDEBUG) $(LIBDIRS) -o $@ $(DLL_DEF) $^ $(LIBS)
 
-lgscript.exe: $(SHELL_OBJS) $(LUAX_OBJ2) $(LUA_OBJS) $(LUA_OBJ2)
+lgscript.exe: $(SHELL_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ2)
 	$(CXX) $(LDDEBUG) -o $@ $^
 
 $(bindir)/LgShell.o: $(srcdir)/LgShell.cpp
@@ -244,7 +246,7 @@ $(bindir)/LgShell.o: $(srcdir)/LgShell.cpp
 $(bindir)/luax2.o: $(srcdir)/luax.cpp $(srcdir)/luax.hpp $(srcdir)/luax.h
 	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(srcdir)/luax.cpp
 
-$(bindir)/shell_res.o: $(srcdir)/shell.rc $(srcdir)/version.rc buildno
+$(bindir)/shell_res.o: $(srcdir)/shell.rc $(srcdir)/version.rc
 	$(RC) $(DEFINES) -DBUILD=`cat buildno` -o $@ -i $<
 
 $(bindir)/script_res.o: $(srcdir)/script.rc $(srcdir)/version.rc buildno
@@ -311,7 +313,7 @@ $(bindir)/llex.o: $(LUADIR)/llex.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/ldo.h $(LUADIR)/lobject.h \
 	$(LUADIR)/llimits.h $(LUADIR)/lstate.h $(LUADIR)/ltm.h $(LUADIR)/lzio.h \
 	$(LUADIR)/lmem.h $(LUADIR)/llex.h $(LUADIR)/lparser.h $(LUADIR)/lstring.h \
-	$(LUADIR)/lgc.h $(LUADIR)/ltable.h $(LUADIR)/lctype.h
+	$(LUADIR)/lgc.h $(LUADIR)/ltable.h
 $(bindir)/lmem.o: $(LUADIR)/lmem.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/ldebug.h $(LUADIR)/lstate.h \
 	$(LUADIR)/lobject.h $(LUADIR)/llimits.h $(LUADIR)/ltm.h $(LUADIR)/lzio.h \
@@ -319,8 +321,7 @@ $(bindir)/lmem.o: $(LUADIR)/lmem.c \
 $(bindir)/lobject.o: $(LUADIR)/lobject.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/ldo.h $(LUADIR)/lobject.h \
 	$(LUADIR)/llimits.h $(LUADIR)/lstate.h $(LUADIR)/ltm.h $(LUADIR)/lzio.h \
-	$(LUADIR)/lmem.h $(LUADIR)/lstring.h $(LUADIR)/lgc.h $(LUADIR)/lvm.h \
-	$(LUADIR)/lctype.h
+	$(LUADIR)/lmem.h $(LUADIR)/lstring.h $(LUADIR)/lgc.h $(LUADIR)/lvm.h
 $(bindir)/lopcodes.o: $(LUADIR)/lopcodes.c \
 	$(LUADIR)/lopcodes.h $(LUADIR)/llimits.h $(LUADIR)/lua.h $(LUADIR)/luaconf.h
 $(bindir)/lparser.o: $(LUADIR)/lparser.c \
@@ -337,7 +338,7 @@ $(bindir)/lstate.o: $(LUADIR)/lstate.c \
 $(bindir)/lstring.o: $(LUADIR)/lstring.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lmem.h $(LUADIR)/llimits.h \
 	$(LUADIR)/lobject.h $(LUADIR)/lstate.h $(LUADIR)/ltm.h $(LUADIR)/lzio.h \
-	$(LUADIR)/lstring.h $(LUADIR)/lgc.h $(LUADIR)/lctype.h
+	$(LUADIR)/lstring.h $(LUADIR)/lgc.h
 $(bindir)/ltable.o: $(LUADIR)/ltable.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/ldebug.h $(LUADIR)/lstate.h \
 	$(LUADIR)/lobject.h $(LUADIR)/llimits.h $(LUADIR)/ltm.h $(LUADIR)/lzio.h \
@@ -360,49 +361,56 @@ $(bindir)/lzio.o: $(LUADIR)/lzio.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/llimits.h $(LUADIR)/lmem.h \
 	$(LUADIR)/lstate.h $(LUADIR)/lobject.h $(LUADIR)/ltm.h $(LUADIR)/lzio.h
 $(bindir)/lctype.o: $(LUADIR)/lctype.c $(LUADIR)/lctype.h
-$(bindir)/lauxlib.o: $(LUADIR)/lauxlib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lctype.h
-$(bindir)/lbaselib.o: $(LUADIR)/lbaselib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUADIR)/lctype.h
-$(bindir)/ldblib.o: $(LUADIR)/ldblib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/liolib.o: $(LUADIR)/liolib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/lmathlib.o: $(LUADIR)/lmathlib.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/loslib.o: $(LUADIR)/loslib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/lstrlib.o: $(LUADIR)/lstrlib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUADIR)/lctype.h
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/ltablib.o: $(LUADIR)/ltablib.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/loadlib.o: $(LUADIR)/loadlib.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/linit.o: $(LUADIR)/linit.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
-$(bindir)/vec.o: $(LUADIR)/vec.c \
+
+$(bindir)/vec.o: $(LUAMOD)/vec.c \
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+$(bindir)/llist.o: $(LUAMOD)/llist.c \
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+$(bindir)/lext.o: $(LUAMOD)/lext.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 
-$(bindir)/lauxlib2.o: $(LUADIR)/lauxlib.c \
-		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lctype.h
+$(bindir)/lauxlib1.o: $(LUADIR)/lauxlib.c \
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h
 	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/lauxlib.c
 
-$(bindir)/lbaselib2.o: $(LUADIR)/lbaselib.c \
-		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUADIR)/lctype.h
+$(bindir)/lbaselib1.o: $(LUADIR)/lbaselib.c \
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/lbaselib.c
+
+$(bindir)/ldblib1.o: $(LUADIR)/ldblib.c \
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/ldblib.c
+
+$(bindir)/modlib1.o: $(LUAMOD)/modlib.c \
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUAMOD)/modlib.h
+	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUAMOD)/modlib.c
+
+$(bindir)/lauxlib2.o: $(LUADIR)/lauxlib.c \
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h
+	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) -o $@ -c $(LUADIR)/lauxlib.c
+
+$(bindir)/lbaselib2.o: $(LUADIR)/lbaselib.c \
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) -o $@ -c $(LUADIR)/lbaselib.c
 
 $(bindir)/ldblib2.o: $(LUADIR)/ldblib.c \
 		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
-	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/ldblib.c
+	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) -o $@ -c $(LUADIR)/ldblib.c
 
-$(bindir)/liolib2.o: $(LUADIR)/liolib.c \
-		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
-	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/liolib.c
-
-$(bindir)/loslib2.o: $(LUADIR)/loslib.c \
-		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
-	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/loslib.c
-
-$(bindir)/linit2.o: $(LUADIR)/linit.c \
-		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
-	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/linit.c
+$(bindir)/modlib2.o: $(LUAMOD)/modlib.c \
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUAMOD)/modlib.h
+	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) -o $@ -c $(LUAMOD)/modlib.c

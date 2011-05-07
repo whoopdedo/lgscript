@@ -54,7 +54,6 @@ namespace luax
 		TNil = LUA_TNIL,
 		TBoolean = LUA_TBOOLEAN,
 		TNumber = LUA_TNUMBER,
-		TInteger = LUA_TINTEGER,
 		TString = LUA_TSTRING,
 		TTable = LUA_TTABLE,
 		TFunction = LUA_TFUNCTION,
@@ -239,8 +238,8 @@ namespace luax
 			{ lua_pushnil(m_L); return *this; };
 		State& push(Integer n)
 			{ lua_pushinteger(m_L, n); return *this; };
-		State& push(int n)
-			{ return push(Integer(n)); };
+		//State& push(int n)
+		//	{ return push(Integer(n)); };
 		State& push(Number n)
 			{ lua_pushnumber(m_L, n); return *this; };
 		State& push(float n)
@@ -274,7 +273,7 @@ namespace luax
 			{ return lua_topointer(m_L, index); };
 		const char* asString(int index = -1)
 			{ return lua_tostring(m_L, index); };
-		const char* asString(int index = -1, size_t* l)
+		const char* asString(int index, size_t* l)
 			{ return lua_tolstring(m_L, index, l); };
 		std::string toString(int index = -1)
 		{
@@ -303,8 +302,6 @@ namespace luax
 			{ return lua_isfunction(m_L, index); };
 		bool isLightUserdata(int index = -1)
 			{ return lua_islightuserdata(m_L, index); };
-		bool isInteger(int index = -1)
-			{ return lua_isinteger(m_L, index); };
 		bool isNil(int index = -1)
 			{ return lua_isnil(m_L, index); };
 		bool isNone(int index = -1)
@@ -607,8 +604,6 @@ namespace luax
 			{ return luaL_checkinteger(m_L, narg); };
 		Number checkNumber(int narg)
 			{ return luaL_checknumber(m_L, narg); };
-		Integer checkIntOrNumber(int narg)
-			{ return luaL_checkintnum(m_L, narg); };
 		const char* checkString(int narg, size_t* l)
 			{ return luaL_checklstring(m_L, narg, l); };
 		std::string checkString(int narg)
@@ -624,16 +619,14 @@ namespace luax
 			{ return reinterpret_cast<T*>(luaL_checkudata(m_L, narg, T::s_ClassName)); };
 		int checkOption(int narg, const char* const lst[], const char* def = NULL)
 			{ return luaL_checkoption(m_L, narg, def, lst); };
-		unsigned long checkFlags(int narg, const char* const lst[], const char* def = NULL)
-			{ return luaL_checkflags(m_L, narg, def, lst); };
+		//unsigned long checkFlags(int narg, const char* const lst[], const char* def = NULL)
+		//	{ return luaL_checkflags(m_L, narg, def, lst); };
 		State& checkStack(int sz, const char* msg)
 			{ luaL_checkstack(m_L, sz, msg); return *this; };
 		Integer optInteger(int narg, Integer d = 0)
 			{ return luaL_optinteger(m_L, narg, d); };
 		Number optNumber(int narg, Number d = 0)
 			{ return luaL_optnumber(m_L, narg, d); };
-		Integer optIntOrNumber(int narg, Integer d = 0)
-			{ return luaL_optintnum(m_L, narg, d); };
 		const char* optString(int narg, size_t* l, const char* d = NULL)
 			{ return luaL_optlstring(m_L, narg, d, l); };
 		std::string optString(int narg, const char* d = NULL)
@@ -768,6 +761,7 @@ namespace luax
 		State& registerLib(const Registry* table, const char* name = NULL)
 			{ luaL_register(m_L, name, table); return *this; };
 
+#if 0
 		enum FinalType
 		{
 			Finally = LUA_FINALWAYS,
@@ -781,6 +775,7 @@ namespace luax
 			{ return lua_finally(m_L, nargs, scope, when); };
 		State& finalize(bool failed = false, int base = 0)
 			{ lua_finalize(m_L, base, int(failed)); return *this; }
+#endif
 	};
 
 	class MainState : public State
