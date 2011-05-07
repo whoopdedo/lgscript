@@ -596,6 +596,8 @@ static void add_s (MatchState *ms, luaL_Buffer *b, const char *s,
       luaL_addchar(b, news[i]);
     else {
       i++;  /* skip ESC */
+      if (news[i] == '\0')
+        luaL_error(ms->L, "malformed replacement string (ends with " LUA_QL("%%") ")");
       if (!isdigit(uchar(news[i])))
         luaL_addchar(b, news[i]);
       else if (news[i] == '0')
@@ -709,7 +711,10 @@ static void addquoted (lua_State *L, luaL_Buffer *b, int arg) {
         break;
       }
       case '\0': {
-        luaL_addlstring(b, "\\000", 4);
+        if (!isdigit(s[1]))
+          luaL_addlstring(b, "\\0", 2);
+        else
+          luaL_addlstring(b, "\\000", 4);
         break;
       }
       default: {
