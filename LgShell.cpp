@@ -27,6 +27,7 @@
 #include <fstream>
 #include <string>
 #include <list>
+#include <limits>
 
 #define lua_c
 #define LUAX_INLINE
@@ -109,6 +110,11 @@ private:
 	void runScripts(void);
 	void runConsole(void);
 	bool loadLine(void);
+	State& loadFile(const char* filename);
+	State& loadFile(const std::string& filename)
+	{
+		return loadFile(filename.c_str());
+	};
 	bool pushLine(bool first = false);
 	const char* getPrompt(bool first);
 	void traceCall(int nargs, bool clear = true);
@@ -135,14 +141,25 @@ public:
 	virtual int write(State& S, const char* p, size_t sz);
 };
 
+class LgScriptReader : public Undump {
+	istream* infile;
+	bool extraline;
+	char buff[LUAL_BUFFERSIZE];
+public:
+	virtual ~LgScriptReader();
+	LgScriptReader(const char* filename);
+
+	virtual const char* read(State& S, size_t *sz);
+};
+
 LgScriptWriter::LgScriptWriter(const string& filename)
+	: outfile(filename.c_str(), ios::out | ios::trunc | ios::binary)
 {
-	outfile.open(filename.c_str(), ios::out | ios::trunc | ios::binary);
 	if (!outfile.is_open())
 		throw runtime_error(strerror(errno));
 }
 
-int LgScriptWriter::write(State& S, const char* p, size_t sz)
+int LgScriptWriter::write(State&, const char* p, size_t sz)
 {
 	if (sz != 0)
 	{
@@ -151,6 +168,68 @@ int LgScriptWriter::write(State& S, const char* p, size_t sz)
 			return -1;
 	}
 	return 0;
+}
+
+LgScriptReader::~LgScriptReader()
+{
+	if (infile != &cin)
+		delete infile;
+}
+
+LgScriptReader::LgScriptReader(const char* filename)
+{
+	ifstream* finfile = NULL;
+	if (filename)
+	{
+		infile = finfile = new ifstream(filename, ios::in);
+		if (!finfile->is_open())
+			throw runtime_error(strerror(errno));
+	}
+	else
+		infile = &cin;
+
+	int c = infile->get();
+	if (c == '#')  /* Unix exec. file? */
+	{
+		extraline = true;
+		infile->ignore(numeric_limits<int>::max(), '\n');
+		if (!infile->eof())
+			c = infile->get();
+	}
+	else if (c == '@')  /* DOS batch file? */
+	{
+		do
+		{
+			if (infile->eof())
+				break;
+			c = infile->get();
+		} while (c != ' ' && c != '\n');
+	}
+	if (c == LUA_SIGNATURE[0] && finfile)  /* binary file? */
+	{
+		finfile->close();
+		finfile->open(filename, ios::in | ios::binary);
+		if (!finfile->is_open())
+			throw runtime_error(strerror(errno));
+		finfile->ignore(numeric_limits<int>::max(), LUA_SIGNATURE[0]);
+		extraline = 0;
+	}
+	infile->unget();
+}
+
+const char* LgScriptReader::read(State&, size_t *sz)
+{
+	if (extraline)
+	{
+		extraline = false;
+		*sz = 1;
+		return "\n";
+	}
+	if (infile->eof())
+		return NULL;
+	infile->read(buff, sizeof(buff));
+	*sz = infile->gcount();
+	return buff;
 }
 
 LgScriptArgs::LgScriptArgs(int ac, const char* const* av)
@@ -476,6 +555,19 @@ bool LgScriptApp::loadLine(void) {
 	}
 	remove(1);
 	return false;
+}
+
+State& LgScriptApp::loadFile(const char* filename)
+{
+	int fnameindex = getTop() + 1;  /* index of filename on the stack */
+	if (filename == NULL)
+		push("=stdin");
+	else
+		pushFormat("@%s", filename);
+	LgScriptReader reader(filename);
+	load(&reader, asString(fnameindex));
+	remove(fnameindex);
+	return *this;
 }
 
 void LgScriptApp::runConsole(void)
