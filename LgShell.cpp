@@ -156,7 +156,7 @@ LgScriptWriter::LgScriptWriter(const string& filename)
 	: outfile(filename.c_str(), ios::out | ios::trunc | ios::binary)
 {
 	if (!outfile.is_open())
-		throw runtime_error(strerror(errno));
+		throw FileError(strerror(errno));
 }
 
 int LgScriptWriter::write(State&, const char* p, size_t sz)
@@ -183,7 +183,7 @@ LgScriptReader::LgScriptReader(const char* filename)
 	{
 		infile = finfile = new ifstream(filename, ios::in);
 		if (!finfile->is_open())
-			throw runtime_error(strerror(errno));
+			throw FileError(strerror(errno));
 	}
 	else
 		infile = &cin;
@@ -210,7 +210,7 @@ LgScriptReader::LgScriptReader(const char* filename)
 		finfile->close();
 		finfile->open(filename, ios::in | ios::binary);
 		if (!finfile->is_open())
-			throw runtime_error(strerror(errno));
+			throw FileError(strerror(errno));
 		finfile->ignore(numeric_limits<int>::max(), LUA_SIGNATURE[0]);
 		extraline = 0;
 	}
