@@ -581,12 +581,6 @@ static int gmatch (lua_State *L) {
 }
 
 
-static int gfind_nodef (lua_State *L) {
-  return luaL_error(L, LUA_QL("string.gfind") " was renamed to "
-                       LUA_QL("string.gmatch"));
-}
-
-
 static void add_s (MatchState *ms, luaL_Buffer *b, const char *s,
                                                    const char *e) {
   size_t l, i;
@@ -710,15 +704,29 @@ static void addquoted (lua_State *L, luaL_Buffer *b, int arg) {
         luaL_addlstring(b, "\\r", 2);
         break;
       }
+      case '\t': {
+        luaL_addlstring(b, "\\t", 2);
+        break;
+      }
       case '\0': {
-        if (!isdigit(s[1]))
+        if (!isdigit(uchar(*(s+1))))
           luaL_addlstring(b, "\\0", 2);
         else
           luaL_addlstring(b, "\\000", 4);
         break;
       }
       default: {
-        luaL_addchar(b, *s);
+        if (iscntrl(uchar(*s))) {
+          char buff[10];
+          int n;
+          if (!isdigit(uchar(*(s+1))))
+            n = sprintf(buff, "\\%d", (int)uchar(*s));
+          else
+            n = sprintf(buff, "\\%03d", (int)uchar(*s));
+          luaL_addlstring(b, buff, n);
+        }
+        else
+          luaL_addchar(b, *s);
         break;
       }
     }
@@ -835,7 +843,6 @@ static const luaL_Reg strlib[] = {
   {"dump", str_dump},
   {"find", str_find},
   {"format", str_format},
-  {"gfind", gfind_nodef},
   {"gmatch", gmatch},
   {"gsub", str_gsub},
   {"len", str_len},
