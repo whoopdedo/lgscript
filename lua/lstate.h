@@ -15,8 +15,6 @@
 
 
 
-struct lua_longjmp;  /* defined in ldo.c */
-
 
 /* table of globals */
 #define gt(L)	(&L->l_gt)

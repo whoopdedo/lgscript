@@ -628,24 +628,37 @@ union luai_Cast { double l_d; long l_l; };
 */
 #if defined(__cplusplus)
 /* C++ exceptions */
-#define LUAI_THROW(L,c)	throw(c)
-#define LUAI_TRY(L,c,a)	try { a } catch(...) \
+#define LUAI_THROW(L,c)	throw(*c)
+#define LUAI_TRY(L,c,a)	try { a } catch(lua_longjmp&) \
 	{ if ((c)->status == 0) (c)->status = -1; }
 #define luai_jmpbuf	int  /* dummy variable */
+struct lua_longjmp {
+  volatile int status;  /* error code */
+  lua_longjmp(int c=0) : status(c) { }
+};
+struct lua_exitjmp : lua_longjmp {
+  lua_exitjmp(int c=0) : lua_longjmp(c) { }
+};
+#if defined(LUA_CORE)
+#define exit(c) throw(lua_exitjmp(-c))
+#endif
 
 #elif defined(LUA_USE_ULONGJMP)
 /* in Unix, try _longjmp/_setjmp (more efficient) */
 #define LUAI_THROW(L,c)	_longjmp((c)->b, 1)
 #define LUAI_TRY(L,c,a)	if (_setjmp((c)->b) == 0) { a }
 #define luai_jmpbuf	jmp_buf
+struct lua_longjmp;
 
 #else
 /* default handling with long jumps */
 #define LUAI_THROW(L,c)	longjmp((c)->b, 1)
 #define LUAI_TRY(L,c,a)	if (setjmp((c)->b) == 0) { a }
 #define luai_jmpbuf	jmp_buf
+struct lua_longjmp;
 
 #endif
+
 
 
 /*

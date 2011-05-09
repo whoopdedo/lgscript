@@ -41,10 +41,15 @@
 
 
 /* chain list of long jump buffers */
-struct lua_longjmp {
+#if defined(__cplusplus)
+struct luai_longjmp : lua_longjmp {
+#else
+# define luai_longjmp lua_longjmp
+struct luai_longjmp {
+  volatile int status;  /* error code */
+#endif
   struct lua_longjmp *previous;
   luai_jmpbuf b;
-  volatile int status;  /* error code */
 };
 
 
@@ -109,7 +114,7 @@ void luaD_throw (lua_State *L, int errcode) {
 
 
 int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud) {
-  struct lua_longjmp lj;
+  struct luai_longjmp lj;
   lj.status = 0;
   lj.previous = L->errorJmp;  /* chain new error handler */
   L->errorJmp = &lj;
