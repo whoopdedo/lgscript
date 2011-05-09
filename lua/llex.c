@@ -275,6 +275,13 @@ static void read_long_string (LexState *ls, SemInfo *seminfo, int sep) {
 }
 
 
+static int hexavalue (int c) {
+  if (isdigit(c)) return c - '0';
+  else if (isupper(c)) return c - 'A' + 10;
+  else return c - 'a' + 10;
+}
+
+
 static void read_string (LexState *ls, int del, SemInfo *seminfo) {
   save_and_next(ls);
   while (ls->current != del) {
@@ -297,6 +304,22 @@ static void read_string (LexState *ls, int del, SemInfo *seminfo) {
           case 'r': c = '\r'; break;
           case 't': c = '\t'; break;
           case 'v': c = '\v'; break;
+          case 'x': {
+            next(ls);
+            if (!isxdigit(ls->current)) {
+              save(ls, 'x');
+            }
+            else {  /* \xXX */
+              c = hexavalue(ls->current);
+              next(ls);
+              if (isxdigit(ls->current)) {
+                c = (c<<4) + hexavalue(ls->current);
+                next(ls);
+              }
+              save(ls, c);
+            }
+            continue;
+          }
           case '\n':  /* go through */
           case '\r': save(ls, '\n'); inclinenumber(ls); continue;
           case EOZ: continue;  /* will raise an error next loop */
