@@ -539,6 +539,13 @@
 #define lua_number2str(s,n)	sprintf((s), LUA_NUMBER_FMT, (n))
 #define LUAI_MAXNUMBER2STR	32 /* 16 digits, sign, point, and \0 */
 #define lua_str2number(s,p)	strtod((s), (p))
+#if defined(_MSC_VER)
+#define LUA_UNSIGNED			unsigned __int64
+#define lua_str2unsigned(s,p,b)	_strtoui64((s), (p), (b))
+#else
+#define LUA_UNSIGNED			unsigned long long
+#define lua_str2unsigned(s,p,b)	strtoull((s), (p), (b))
+#endif
 
 
 /*
