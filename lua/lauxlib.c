@@ -22,6 +22,7 @@
 
 #include "lua.h"
 
+#include "llimits.h"
 #include "lauxlib.h"
 
 
@@ -98,14 +99,73 @@ LUALIB_API int luaL_error (lua_State *L, const char *fmt, ...) {
 
 LUALIB_API int luaL_checkoption (lua_State *L, int narg, const char *def,
                                  const char *const lst[]) {
-  const char *name = (def) ? luaL_optstring(L, narg, def) :
-                             luaL_checkstring(L, narg);
+  const char *name;
   int i;
+  if (lua_type(L, narg) == LUA_TNUMBER) {
+    int n;
+    lua_Number realn = lua_tonumber(L, narg);
+    lua_number2int(n, realn);
+    if (cast_num(n) == realn && n >= 0) {
+        for (i=0; lst[i]; i++)
+          if (i == n) return i;
+    }
+    return luaL_argerror(L, narg,
+           lua_pushfstring(L, "invalid option " LUA_QL("%f"), realn));
+  }
+  name = (def) ? luaL_optstring(L, narg, def) :
+                 luaL_checkstring(L, narg);
   for (i=0; lst[i]; i++)
     if (strcmp(lst[i], name) == 0)
       return i;
   return luaL_argerror(L, narg,
                        lua_pushfstring(L, "invalid option " LUA_QS, name));
+}
+
+
+LUALIB_API unsigned long luaL_checkflags (lua_State *L, int narg, const char *def,
+                                 const char *const lst[]) {
+  const char *name;
+  const char *sep;
+  unsigned long opts;
+  int i;
+  if (lua_type(L, narg) == LUA_TNUMBER) {
+    unsigned long mask = 1;
+    int n;
+    lua_Number realn = lua_tonumber(L, narg);
+    lua_number2int(n, realn);
+    if (cast_num(n) == realn && n >= 0) {
+        for (i=0; lst[i]; i++)
+          mask <<= 1;
+        if ((opts = n & (mask-1))) return opts;
+    }
+    return luaL_argerror(L, narg,
+           lua_pushfstring(L, "invalid flag " LUA_QL(LUA_NUMBER_FMT), realn));
+  }
+  name = (def) ? luaL_optstring(L, narg, def) :
+                 luaL_checkstring(L, narg);
+  opts = 0;
+  while (name) {
+    sep = strchr(name, ',');
+    if (sep == NULL)
+      sep = name + strlen(name);
+    if (sep != name) {
+      unsigned long n = 0;
+      size_t l = sep - name;
+      for (i=0; lst[i]; i++)
+        if (strncmp(lst[i], name, l) == 0 && lst[i][l] == '\0') {
+          n = 1 << i;
+          break;
+        }
+      if (n == 0)
+        return luaL_argerror(L, narg,
+                             lua_pushfstring(L, "invalid flag " LUA_QS, name));
+      opts |= n;
+    }
+    if (*sep == '\0')
+      break;
+    name = sep + 1;
+  }
+  return opts;
 }
 
 

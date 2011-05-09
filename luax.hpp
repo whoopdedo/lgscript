@@ -619,8 +619,8 @@ namespace luax
 			{ return reinterpret_cast<T*>(luaL_checkudata(m_L, narg, T::s_ClassName)); };
 		int checkOption(int narg, const char* const lst[], const char* def = NULL)
 			{ return luaL_checkoption(m_L, narg, def, lst); };
-		//unsigned long checkFlags(int narg, const char* const lst[], const char* def = NULL)
-		//	{ return luaL_checkflags(m_L, narg, def, lst); };
+		unsigned long checkFlags(int narg, const char* const lst[], const char* def = NULL)
+			{ return luaL_checkflags(m_L, narg, def, lst); };
 		State& checkStack(int sz, const char* msg)
 			{ luaL_checkstack(m_L, sz, msg); return *this; };
 		Integer optInteger(int narg, Integer d = 0)
