@@ -73,6 +73,7 @@ LUA_SRCS = $(LUADIR)/lapi.c $(LUADIR)/lapi.h \
 	$(LUADIR)/luaconf.h \
 	$(LUADIR)/lua.h \
 	$(LUAMOD)/vec.c \
+	$(LUAMOD)/final.c \
 	$(LUAMOD)/llist.c \
 	$(LUAMOD)/lext.c \
 	$(LUAMOD)/modlib.c \
@@ -101,6 +102,7 @@ LUA_OBJS = $(bindir)/lapi.o \
 	$(bindir)/lstrlib.o \
 	$(bindir)/loadlib.o \
 	$(bindir)/vec.o \
+	$(bindir)/final.o \
 	$(bindir)/lext.o
 LUA_OBJ1 = \
 	$(bindir)/lauxlib1.o \
@@ -376,11 +378,13 @@ $(bindir)/linit.o: $(LUADIR)/linit.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 
 $(bindir)/vec.o: $(LUAMOD)/vec.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUAMOD)/modlib.h
+$(bindir)/final.o: $(LUAMOD)/final.c \
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUAMOD)/modlib.h
 $(bindir)/llist.o: $(LUAMOD)/llist.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUAMOD)/modlib.h
 $(bindir)/lext.o: $(LUAMOD)/lext.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUAMOD)/modlib.h
 
 $(bindir)/lauxlib1.o: $(LUADIR)/lauxlib.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h

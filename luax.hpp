@@ -31,9 +31,10 @@
 
 #include "luax.h"
 
-#include <lua/lua.h>
-#include <lua/lualib.h>
-#include <lua/lauxlib.h>
+#include "lua/lua.h"
+#include "lua/lualib.h"
+#include "lua/lauxlib.h"
+#include "mod/modlib.h"
 
 namespace luax
 {
@@ -761,21 +762,24 @@ namespace luax
 		State& registerLib(const Registry* table, const char* name = NULL)
 			{ luaL_register(m_L, name, table); return *this; };
 
-#if 0
 		enum FinalType
 		{
-			Finally = LUA_FINALWAYS,
-			FinalReturn = LUA_FINSUCCESS,
-			FinalError = LUA_FINERROR
+			Finally = LMOD_FINALWAYS,
+			FinalReturn = LMOD_FINSUCCESS,
+			FinalError = LMOD_FINERROR
 		};
 
 		int getFinalFrame(void)
-			{ return lua_getfinalframe(m_L); };
-		int finally(int nargs = 0, FinalType when = Finally, int scope = -1)
-			{ return lua_finally(m_L, nargs, scope, when); };
-		State& finalize(bool failed = false, int base = 0)
-			{ lua_finalize(m_L, base, int(failed)); return *this; }
-#endif
+			{ return lmod_getfinalframe(m_L); };
+		State& fCall(int nargs = 0, int nresults = 0, int errfunc = 0)
+		{
+			raise(ErrCode(lmod_fcall(m_L, nargs, nresults, errfunc)));
+			return *this;
+		};
+		int finally(int nargs = 0, FinalType when = Finally)
+			{ return lmod_finally(m_L, nargs, when); };
+		State& finalize(int base = 0)
+			{ lmod_finalize(m_L, base, 0); return *this; }
 	};
 
 	class MainState : public State
