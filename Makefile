@@ -101,7 +101,6 @@ LUA_OBJS = $(bindir)/lapi.o \
 	$(bindir)/lstrlib.o \
 	$(bindir)/loadlib.o \
 	$(bindir)/vec.o \
-	$(bindir)/llist.o \
 	$(bindir)/lext.o
 LUA_OBJ1 = \
 	$(bindir)/lauxlib1.o \

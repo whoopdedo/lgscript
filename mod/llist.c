@@ -16,11 +16,13 @@ static void auxnewlist (lua_State *L, int n) {
 }
 
 static int list_new (lua_State *L) {
-  int n = lua_gettop(L);
+  int n = 0;
+  if (!lua_isnoneornil(L, 1))
+    n = aux_getn(L, 1);
   int i;
   auxnewlist(L, n);
   for (i = 1; i <= n; i++) {
-    lua_pushvalue(L, i);
+    lua_rawgeti(L, 1, i);
     lua_rawseti(L, -2, i);
   }
   return 1;
@@ -28,10 +30,25 @@ static int list_new (lua_State *L) {
 
 static void addfield (lua_State *L, luaL_Buffer *b, int i) {
   lua_rawgeti(L, 1, i);
-  if (!lua_isstring(L, -1))
-    luaL_error(L, "invalid value (%s) at index %d in table for "
-                  LUA_QL("concat"), luaL_typename(L, -1), i);
-    luaL_addvalue(b);
+  switch (lua_type(L, -1)) {
+    case LUA_TNUMBER:
+    case LUA_TSTRING:
+      luaL_addvalue(b);
+      break;
+    case LUA_TBOOLEAN:
+      luaL_addstring(b, lua_toboolean(L, -1) ? "true" : "false");
+      lua_pop(L, 1);
+      break;
+    case LUA_TNIL:
+      luaL_error(L, "invalid value (nil) at index %d in table for "
+                    LUA_QL("tostring"), i);
+      break;
+    default:
+      lua_pushfstring(L, "%s: %p", luaL_typename(L, -1), lua_topointer(L, -1));
+      luaL_addvalue(b);
+      lua_pop(L, 1);
+      break;
+  }
 }
 
 static int list_tostring (lua_State *L) {
@@ -39,14 +56,14 @@ static int list_tostring (lua_State *L) {
   int i;
   luaL_Buffer b;
   luaL_buffinit(L, &b);
-  luaL_addlstring(&b, "list(", 5);
+  luaL_addlstring(&b, "list{", 5);
   for (i = 1; i < n; i++) {
     addfield(L, &b, i);
-    luaL_addlstring(&b, ", ", 2);
+    luaL_addlstring(&b, ",", 1);
   }
   if (i == n)  /* add last value (if interval was not empty) */
     addfield(L, &b, i);
-  luaL_addlstring(&b, ")", 1);
+  luaL_addlstring(&b, "}", 1);
   luaL_pushresult(&b);
   return 1;
 }
@@ -65,6 +82,28 @@ static int list_concat (lua_State *L) {
     lua_rawseti(L, -2, n++);
   }
   return 1;
+}
+
+static int list_extend (lua_State *L) {
+  int nl = aux_getn(L, 1);
+  int nr = aux_getn(L, 2);
+  int n = 1;
+  while (n <= nr) {
+    lua_rawgeti(L, 2, n++);
+    lua_rawseti(L, 1, ++nl);
+  }
+  return 0;
+}
+
+static int list_insert (lua_State *L) {
+  int e = aux_getn(L, 1) + 1;  /* first empty element */
+  int num = lua_gettop(L);
+  if (num >= 3) {
+    int pos = luaL_checkint(L, 2);
+    if (0 >= pos || pos > e)
+      return luaL_argerror(L, 2, "index out of range");
+  }
+  return tinsert(L);
 }
 
 static int list_equal (lua_State *L) {
@@ -90,13 +129,22 @@ static int list_equal (lua_State *L) {
 }
 
 static int list_setn (lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
-  int d = luaL_checkint(L, 2);
-  if (d <= 0) {
-    return luaL_error(L, "invalid index for list");
-  }
+  int e = aux_getn(L, 1);  /* first empty element */
+  int pos = luaL_checkint(L, 2);
+  if (0 >= pos || pos > (e+1))
+    return luaL_error(L, "index out of range");
   lua_settop(L, 3);
-  lua_rawset(L, 1);
+  if (lua_isnil(L, 3)) {
+    luaL_setn(L, 1, e - 1);  /* t.n = t.n-1 */
+    for (; pos<e; pos++) {
+      lua_rawgeti(L, 1, pos+1);
+      lua_rawseti(L, 1, pos);  /* t[pos] = t[pos+n] */
+    }
+    lua_pushnil(L);
+    lua_rawseti(L, 1, e);  /* t[e] = nil */
+  }
+  else
+    lua_rawset(L, 1);
   return 0;
 }
 

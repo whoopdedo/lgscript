@@ -19,7 +19,6 @@ static const luaL_Reg lualibs[] = {
   {LUA_MATHLIBNAME, luaopen_math},
   {LUA_DBLIBNAME, luaopen_debug},
   {LVECTOR_NAME, luaopen_vector},
-  {LLIST_NAME, luaopen_list},
   {"ext", luaopen_ext},
   {NULL, NULL}
 };

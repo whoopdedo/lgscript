@@ -70,6 +70,7 @@ static int t_remove (lua_State *L) {
   return n;
 }
 
+#if 0
 static int posrelat (int pos, size_t len) {
   if (pos < 0) pos += len + 1;
   return (pos >= 0) ? pos : 0;
@@ -98,6 +99,7 @@ static int t_slice (lua_State *L) {
   
   return 1;
 }
+#endif
 
 static int t_find (lua_State *L) {
   luaL_checktype(L, 1, LUA_TTABLE);
@@ -224,6 +226,23 @@ static int t_reverse (lua_State *L) {
   return 0;
 }
 
+
+static int t_pack (lua_State *L) {
+  int top = lua_gettop(L);
+  lua_createtable(L, top, 1);  /* create result table */
+  lua_pushinteger(L, top);  /* number of elements */
+  lua_setfield(L, -2, "n");  /* t.n = number of elements */
+  if (top > 0) {  /* at least one element? */
+    lua_pushvalue(L, 1);
+    lua_rawseti(L, -2, 1);  /* insert first element */
+    lua_replace(L, 1);  /* move table into its position (index 1) */
+    for (; top >= 2; top--)  /* assign other elements */
+      lua_rawseti(L, 1, top);
+  }
+  return 1;
+}
+
+
 static int g_seq (lua_State *L) {
   int n = lua_gettop(L);
   luaL_checkany(L, 1);
@@ -327,9 +346,9 @@ static const luaL_Reg exttable[] = {
   {"keys", t_keys},
   {"values", t_values},
   {"reverse", t_reverse},
-  {"slice", t_slice},
   {"extend", t_extend},
   {"merge", t_merge},
+  {"pack", t_pack},
   {NULL, NULL}
 };
 
@@ -342,6 +361,10 @@ LUALIB_API int luaopen_ext (lua_State *L) {
   lua_pop(L, 1);
   lua_getglobal(L, "table");
   luaL_register(L, NULL, exttable);
+  lua_pushliteral(L, "unpack");
+  lua_pushvalue(L, -1);
+  lua_gettable(L, LUA_GLOBALSINDEX);
+  lua_settable(L, -3);
   lua_pop(L, 1);
   return 0;
 }

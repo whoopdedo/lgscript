@@ -75,16 +75,14 @@ static int getn (lua_State *L) {
 }
 
 
+#ifndef luaL_setn
 static int setn (lua_State *L) {
   luaL_checktype(L, 1, LUA_TTABLE);
-#ifndef luaL_setn
   luaL_setn(L, 1, luaL_checkint(L, 2));
-#else
-  luaL_error(L, LUA_QL("setn") " is obsolete");
-#endif
   lua_pushvalue(L, 1);
   return 1;
 }
+#endif
 
 
 static int tinsert (lua_State *L) {
@@ -274,7 +272,9 @@ static const luaL_Reg tab_funcs[] = {
   {"maxn", maxn},
   {"insert", tinsert},
   {"remove", tremove},
+#ifndef luaL_setn
   {"setn", setn},
+#endif
   {"sort", sort},
   {NULL, NULL}
 };
