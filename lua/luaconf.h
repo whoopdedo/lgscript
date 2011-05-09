@@ -84,13 +84,13 @@
 ** hierarchy or if you want to install your libraries in
 ** non-conventional directories.
 */
-#if defined(LUA_SCRIPT)
+#if defined(LGSCRIPT)
 #define LUA_LDIR	"!\\scripts\\"
 #define LUA_CDIR	"!\\scripts\\"
 #define LUA_PATH_DEFAULT  \
-		LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;"
+		LUA_LDIR"?.luac+" LUA_LDIR"?.lua"
 #define LUA_CPATH_DEFAULT \
-		LUA_CDIR"?.osl;" LUA_CDIR"loadall.osl"
+		LUA_CDIR"?.osl+" LUA_CDIR"loadall.osl"
 
 #elif defined(_WIN32)
 /*
@@ -141,10 +141,10 @@
 ** characters. (E.g., if one of those characters is a common character
 ** in file/directory names.) Probably you do not need to change them.
 */
-#if defined(LUA_SCRIPT)
+#if defined(LGSCRIPT)
 #define LUA_PATHSEP	"+"
 #else
- #define LUA_PATHSEP	";"
+#define LUA_PATHSEP	";"
 #endif
 #define LUA_PATH_MARK	"?"
 #define LUA_EXECDIR	"!"
