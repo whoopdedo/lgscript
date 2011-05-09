@@ -1,27 +1,26 @@
 /******************************************************************************
- *    vec.c
+ * Vector library for Lua
+ * Copyright (C) 2011 Tom N Harris. All rights reserved.
  *
- *    Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
+ *  This software is provided 'as-is', without any express or implied
+ *  warranty.  In no event will the authors be held liable for any damages
+ *  arising from the use of this software.
  *
- *    Permission is hereby granted, free of charge, to any person obtaining a copy
- *    of this software and associated documentation files (the "Software"), to
- *    deal in the Software without restriction, including without limitation the
- *    rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
- *    sell copies of the Software, and to permit persons to whom the Software is
- *    furnished to do so, subject to the following conditions:
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
  *
- *    The above copyright notice and this permission notice shall be included in
- *    all copies or substantial portions of the Software.
- *
- *    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- *    IN THE SOFTWARE.
- *
- *****************************************************************************/
+ *  1. The origin of this software must not be misrepresented; you must not
+ *     claim that you wrote the original software. If you use this software
+ *     in a product, an acknowledgment in the product documentation would be
+ *     appreciated but is not required.
+ *  2. Altered source versions must be plainly marked as such, and must not be
+ *     misrepresented as being the original software.
+ *  3. This notice may not be removed or altered from any source distribution.
+ *  4. Neither the names of the authors nor the names of any of the software
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
+ */
 #include <math.h>
 
 #define LUA_LIB
@@ -40,11 +39,12 @@ static lvector* auxnew (lua_State* L, lua_Number x, lua_Number y, lua_Number z) 
 }
 
 static int lvector_new (lua_State* L) {
+  lua_Number x,y,z;
   int arg = lua_istable(L, 1) ? 1 : 0;
   lua_settop(L, arg+3);
-  lua_Number x = luaL_optnumber(L, arg+1, 0.0);
-  lua_Number y = luaL_optnumber(L, arg+2, 0.0);
-  lua_Number z = luaL_optnumber(L, arg+3, 0.0);
+  x = luaL_optnumber(L, arg+1, 0.0);
+  y = luaL_optnumber(L, arg+2, 0.0);
+  z = luaL_optnumber(L, arg+3, 0.0);
   auxnew(L, x, y, z);
   return 1;
 }
@@ -72,11 +72,13 @@ static int auxequal (lua_Number a, lua_Number b, lua_Number e) {
 }
 
 static int lvector_eq (lua_State* L) {
+  int c;
+  lua_Number e;
   lvector* a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
   lvector* b = (lvector*)luaL_checkudata(L, 2, LVECTOR_NAME);
   lua_getfield(L, 1, "epsilon");
-  lua_Number e = lua_tonumber(L, -1);
-  int c = auxequal(a->v.x,b->v.x,e) && auxequal(a->v.y,b->v.y,e) && auxequal(a->v.z,b->v.z,e);
+  e = lua_tonumber(L, -1);
+  c = auxequal(a->v.x,b->v.x,e) && auxequal(a->v.y,b->v.y,e) && auxequal(a->v.z,b->v.z,e);
   lua_pushboolean(L, c);
   return 1;
 }
@@ -104,37 +106,61 @@ static int lvector_unm (lua_State* L) {
 static int lvector_mul (lua_State* L) {
   lvector* a;
   lua_Number b;
-  if (lua_isuserdata(L, 1)) {
-    a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
-    b = luaL_checknumber(L, 2);
-  }
-  else {
+  if (lua_isnumber(L, 1)) {
     b = luaL_checknumber(L, 1);
     a = (lvector*)luaL_checkudata(L, 2, LVECTOR_NAME);
+  }
+  else {
+    a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
+    if (lua_isnumber(L, 2))
+      b = luaL_checknumber(L, 2);
+    else {
+      lvector* c = (lvector*)luaL_checkudata(L, 2, LVECTOR_NAME);
+      auxnew(L, a->v.x*c->v.x, a->v.y*c->v.y, a->v.z*c->v.z);
+      return 1;
+    }
   }
   auxnew(L, a->v.x*b, a->v.y*b, a->v.z*b);
   return 1;
 }
 
-static lua_Number auxmag (lvector* v) {
-  lua_Number m = v->v.x*v->v.x + v->v.y*v->v.y + v->v.z*v->v.z;
-  return sqrt(m);
+static lua_Number auxmag2 (lvector* v) {
+  return v->v.x*v->v.x + v->v.y*v->v.y + v->v.z*v->v.z;
 }
 
 static int lvector_mag (lua_State* L) {
   lvector* a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
-  lua_pushnumber(L, auxmag(a));
+  lua_pushnumber(L, sqrt(auxmag2(a)));
+  return 1;
+}
+
+static int lvector_mag2 (lua_State* L) {
+  lvector* a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
+  lua_pushnumber(L, auxmag2(a));
   return 1;
 }
 
 static int lvector_norm (lua_State* L) {
   lvector* a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
-  lua_Number m = auxmag(a);
+  lua_Number i,j,k,l,m,e;
+  i = fabs(a->v.x); j = fabs(a->v.y); k = fabs(a->v.z);
+  if (j > i) {
+    lua_Number t = i;
+    i = j; j = t;
+  }
+  if (k > i) {
+    lua_Number t = i;
+    i = k; k = t;
+  }
+  l = i * i;
   lua_getfield(L, 1, "epsilon");
-  lua_Number e = lua_tonumber(L, -1);
-  if (m >= e) {
-    m = 1.0/m;
-    auxnew(L, a->v.x*m, a->v.y*m, a->v.z*m);
+  e = lua_tonumber(L, -1);
+  if (l >= e) {
+    m = sqrt((((j*j) + (k*k)) / l) + 1.0) * i;
+    l = a->v.x / m; i = (fabs(l) < e) ? 0.0 : l;
+    l = a->v.y / m; j = (fabs(l) < e) ? 0.0 : l;
+    l = a->v.z / m; k = (fabs(l) < e) ? 0.0 : l;
+    auxnew(L, i, j, k);
   }
   else
     auxnew(L, 0, 0, 0);
@@ -166,7 +192,6 @@ static int lvector_len (lua_State* L) {
 
 static int lvector_newindex (lua_State* L) {
   lvector* vec = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
-  lua_Number n = luaL_checknumber(L, 3);
   int ix = 0;
   if (lua_type(L, 2) == LUA_TSTRING) {
     size_t sz;
@@ -182,7 +207,7 @@ static int lvector_newindex (lua_State* L) {
     if (ix < 1 || ix > 3)
       luaL_argerror(L, 2, "index out of range");
   }
-  vec->a[ix-1] = n;
+  vec->a[ix-1] = luaL_checknumber(L, 3);
   return 1;
 }
 
@@ -228,6 +253,7 @@ static const luaL_Reg lvector_meta[] = {
 
 static const luaL_Reg lvector_methods[] = {
   {"mag", lvector_mag},
+  {"mag2", lvector_mag2},
   {"norm", lvector_norm},
   {"dot", lvector_dot},
   {"cross", lvector_cross},
