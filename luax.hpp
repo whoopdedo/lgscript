@@ -1,7 +1,7 @@
 /******************************************************************************
  *    luax.hpp
  *
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *    Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to
@@ -239,10 +239,12 @@ namespace luax
 			{ lua_pushnil(m_L); return *this; };
 		State& push(Integer n)
 			{ lua_pushinteger(m_L, n); return *this; };
-		//State& push(int n)
-		//	{ return push(Integer(n)); };
+		State& push(long n)
+			{ return push(Integer(n)); };
 		State& push(Number n)
 			{ lua_pushnumber(m_L, n); return *this; };
+		State& push(unsigned long n)
+			{ return push(Number(n)); };
 		State& push(float n)
 			{ return push(Number(n)); };
 		State& push(const char* s)

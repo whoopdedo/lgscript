@@ -37,6 +37,8 @@ typedef struct lvector lvector;
 #define LVECTOR_NAME		"vector"
 #define LVECTOR_EPSILON		1e-10
 
+LUA_API lvector* lmod_newvector (lua_State *L, lua_Number x, lua_Number y, lua_Number z);
+
 #define LLIST_NAME		"list"
 
 #define LFINALIZER_NAME		"finalizer"

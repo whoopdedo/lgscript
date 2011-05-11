@@ -1,31 +1,32 @@
 /******************************************************************************
- *    LgServices1.cpp
+ *  LgServices1.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 #undef _DARKGAME
 #define _DARKGAME 1
+#define LUAX_INLINE
+#include "luax.h"
+
 #include "LgServices.h"
 #include "ScriptModule.h"
 #include "LgMultiParm.h"
-
-#include <lua/vec.h>
+#include "mod/modlib.h"
 
 namespace Lgs
 {
@@ -101,21 +102,20 @@ int Object1Service::FindClosestObjectNamed(luax::Handle L)
 	if (arc != 0)
 	{
 		cScrVec other;
+		// FIXME
 		double distance = double(LONG_MAX)+1;
-		SInterface<IObjectQuery> q;
-		q = TraitMan->Query(arc,kTraitQueryChildren|kTraitQueryFull);
+		SInterface<IObjectQuery> q(TraitMan->Query(arc,kTraitQueryChildren|kTraitQueryFull));
 		for (; !q->Done(); q->Next())
 		{
 			object o = q->Object();
-			if (o < 0)
-				continue;
-			ObjectSrv->Position(other,o);
-			// can't check for out-of-world in D1, make an (un)reasonable guess
-			if (other.x == 0 && other.y == 0 && other.z == 0)
-				continue;
-			double d = pos.Distance(other);
-			if (d < distance)
-				ret = o;
+			if (static_cast<int>(o) > 0)
+			{
+				ObjectSrv->Position(other,o);
+				// can't check for out-of-world in D1, hope for the best
+				double d = pos.Distance(other);
+				if (d < distance)
+					ret = o;
+			}
 		}
 	}
 	if (ret == 0)
@@ -131,7 +131,7 @@ int Object1Service::AddMetaPropertyToMany(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrStr arg2 = S.checkString(2,NULL);
 	int ret = ObjectSrv->AddMetaPropertyToMany(arg1,arg2);
-	S.push(luax::Number(ret));
+	S.push(ret);
 	return 1;
 }
 int Object1Service::RemoveMetaPropertyFromMany(luax::Handle L)
@@ -141,7 +141,7 @@ int Object1Service::RemoveMetaPropertyFromMany(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrStr arg2 = S.checkString(2,NULL);
 	int ret = ObjectSrv->RemoveMetaPropertyFromMany(arg1,arg2);
-	S.push(luax::Number(ret));
+	S.push(ret);
 	return 1;
 }
 int Object1Service::RenderedThisFrame(luax::Handle L)
@@ -228,49 +228,6 @@ int PropertyService::Set(luax::Handle L)
 	S.push(ret == 0);
 	return 1;
 }
-#if 0
-int PropertyService::Add(luax::Handle L)
-{
-	luax::State S(L);
-	PropertySrv.set(g_pScriptManager);
-	object arg1 = S.checkInteger(1);
-	const char * arg2 = S.checkString(2,NULL);
-	long ret = PropertySrv->Add(arg1,arg2);
-	S.push(ret == 0);
-	return 1;
-}
-int PropertyService::Remove(luax::Handle L)
-{
-	luax::State S(L);
-	PropertySrv.set(g_pScriptManager);
-	object arg1 = S.checkInteger(1);
-	const char * arg2 = S.checkString(2,NULL);
-	long ret = PropertySrv->Remove(arg1,arg2);
-	S.push(ret == 0);
-	return 1;
-}
-int PropertyService::CopyFrom(luax::Handle L)
-{
-	luax::State S(L);
-	PropertySrv.set(g_pScriptManager);
-	object arg1 = S.checkInteger(1);
-	const char * arg2 = S.checkString(2,NULL);
-	object arg3 = S.checkInteger(3);
-	long ret = PropertySrv->CopyFrom(arg1,arg2,arg3);
-	S.push(ret == 0);
-	return 1;
-}
-int PropertyService::Possessed(luax::Handle L)
-{
-	luax::State S(L);
-	PropertySrv.set(g_pScriptManager);
-	object arg1 = S.checkInteger(1);
-	const char * arg2 = S.checkString(2,NULL);
-	bool ret = PropertySrv->Possessed(arg1,arg2);
-	S.push(ret);
-	return 1;
-}
-#endif
 
 const luax::Registry Sound1Service::Methods[] = {
 	{"Play",Play},
@@ -295,7 +252,7 @@ int Sound1Service::Play(luax::Handle L)
 	if (!(S.isNoneOrNil(3) || S.isBoolean(3)))
 	{
 		eSoundSpecial arg4 = S.toBoolean(4) ? kSoundLoop : kSoundNormal;
-		if (S.isInteger(3))
+		if (S.isNumber(3))
 		{
 			object arg3 = S.toInteger(3);
 			SoundSrv->PlayAtObject(ret,arg1,arg2,arg3,arg4);
@@ -338,7 +295,7 @@ int Sound1Service::PlaySchema(luax::Handle L)
 	object arg2 = S.checkInteger(2);
 	if (!(S.isNoneOrNil(3) || S.isBoolean(3)))
 	{
-		if (S.isInteger(3))
+		if (S.isNumber(3))
 		{
 			object arg3 = S.toInteger(3);
 			SoundSrv->PlaySchemaAtObject(ret,arg1,arg2,arg3);
@@ -378,7 +335,7 @@ int Sound1Service::PlayEnvSchema(luax::Handle L)
 	cScrStr arg2 = S.checkString(2,NULL);
 	object arg3 = S.optInteger(3);
 	object arg4 = S.optInteger(4);
-	eEnvSoundLoc arg5 = eEnvSoundLoc(S.checkOption(5,EnvSoundLoc,"OnObj"));
+	eEnvSoundLoc arg5 = eEnvSoundLoc(S.checkOption(5,EnvSoundLoc,"onobj"));
 	true_bool ret;
 	SoundSrv->PlayEnvSchema(ret,arg1,arg2,arg3,arg4,arg5);
 	S.push(bool(ret));

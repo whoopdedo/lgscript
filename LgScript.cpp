@@ -1,22 +1,21 @@
 /******************************************************************************
- *    LgScript.cpp
+ *  LgScript.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 #define LUAX_INLINE
@@ -30,11 +29,10 @@
 
 #include <cstring>
 
-using namespace luax;
 using namespace Lgs;
-using namespace std;
+using namespace luax;
 
-void* LgScript::operator new(size_t s, luax::State& L)
+void* LgScript::operator new(size_t s, State& L)
 {
 	return L.newUserdata(s);
 }
@@ -63,6 +61,16 @@ void LgScript::Init(State& S)
 	S.newMetatable(s_ClassName).registerLib(Methods).pop();
 }
 
+void LgScript::Environment(State& S)
+{
+	// Stack: env
+	S.createTable(0, 3);  // env mt
+	S.createTable().setField("upperindex");
+	S.push(NewIndexEnvMethod).setField("__newindex");
+	S.copy(LUA_GLOBALSINDEX).setField("__index");
+	S.setMetatable();  // metatable(env) = mt
+}
+
 LgScript::~LgScript()
 {
 	try
@@ -89,21 +97,21 @@ LgScript::LgScript(ScriptInterpreter* pInterpreter, const char* pszName, int iOb
 	int iMT = S.createTableI(0, 3);  // script mt
 	S.createTable(0, 3)  // script mt index
 	 .copy().setMetatable();  // metatable(index) = index
-	S.push(pszName).setField("ClassName");
-	S.push(iObjId).setField("ObjId");
+	S.push(pszName).setField("classname");  // index.classname = pszName
+	S.push(iObjId).setField("objid");  // index.objid = iObjId
 	S.copy(iScript);  // script mt index script
 	S.getMetatable(s_ClassName)
-	 .push(IndexMethod, 2)  // script mt index indexfunc
+	 .push(IndexMethod, 2)  // script mt index indexfunc<script,methods>
 	 .setField("__index");  // script mt index
 	S.setField("__index", iMT);  // script mt
 	S.push(true)  // tag closure for quicker access
 	 .push(SetScriptDataMethod, 1)
 	 .setField("__newindex", iMT);
-	S_pushLiteral(S, s_ClassName).setField("class", iMT);
+	S.push(s_ClassName).setField("class", iMT);
 	S.setMetatable(iScript);  // script
 }
 
-long __stdcall LgScript::ReceiveMessage(sScrMsg* pMsg, sMultiParm* pReply, eScrTraceAction eTrace)
+STDMETHODIMP LgScript::ReceiveMessage(sScrMsg* pMsg, sMultiParm* pReply, eScrTraceAction eTrace)
 {
 	cScript::ReceiveMessage(pMsg, pReply, eTrace);
 	long iRet = 0;
@@ -135,7 +143,7 @@ long LgScript::DispatchMessage(sScrMsg* pMsg, cMultiParm* pReply)
 	try
 	{
 	Frame S(m_pInterpreter->Lua());
-	//State S(L->newThread());
+	S->checkStack(LUA_MINSTACK);
 	int iCache = m_pInterpreter->Instance(S);
 	if (S->push(Userdata<IScript>(this)).rawGet(iCache).isNil())
 	{
@@ -145,28 +153,26 @@ long LgScript::DispatchMessage(sScrMsg* pMsg, cMultiParm* pReply)
 		m_bFailed = true;
 		return 1;
 	}
-	S->push(pMsg->message).getTable();
+	LookupMessage(S, pMsg->message);
+	//S->push(pMsg->message).getTable();
 	if (S->isFunction())
 	{
 		m_pInterpreter->PushTraceback(S, this);
-		S->insert();  // script traceback function
-		ScriptMessage(S).push(pMsg);
-		int frame = S->copy().finally(0,State::Finally,0);
+		S->insert();  // screnv traceback function
+		ScriptMessage(S).push(pMsg);  // screnv traceback function message
+		//S->push(Userdata<sScrMsg>(pMsg));
 		try
 		{
-			S->pCall(1, 1, -3);
+			S->fCall(1, 1, -3);
 			if (pReply)
 				*pReply = ScriptMultiParm(S);
-			S->finalize(false, frame);
 		}
 		catch (Exception&)
 		{
-			S->finalize(true, frame);
 			// Need to do this in case there is an open linkset.
 			S->gcCollect();
 		}
 	}
-	//S.setTop(0);
 	}
 	catch (Exception&)
 	{
@@ -174,6 +180,21 @@ long LgScript::DispatchMessage(sScrMsg* pMsg, cMultiParm* pReply)
 		throw;
 	}
 	return 0;
+}
+
+void LgScript::LookupMessage(State& S, const char* pszMessage)
+{
+	int iScript = S.getTop();
+	S.getMetatable(iScript).getField("upperindex");
+	Buffer upper(S);
+	for (const char* psz = pszMessage; *psz; psz++)
+		upper.add(toupper(*psz));
+	upper.push();
+	if (!S.rawGet().isNil())
+	{
+		S.getTable(iScript);
+	}
+	S.insert(iScript+1).setTop(iScript+1);
 }
 
 void LgScript::BeginScript(void)
@@ -184,32 +205,41 @@ void LgScript::BeginScript(void)
 
 void LgScript::EndScript(void)
 {
-	sScrMsg msg;
-	msg.message = "EndScript";
-	msg.time = m_iLastMsg;
+	sScrMsg* msg = new sScrMsg();
+	msg->message = "EndScript";
+	msg->time = m_iLastMsg;
 	try
 	{
-	DispatchMessage(&msg, NULL);
+	DispatchMessage(msg, NULL);
 	}
 	catch (Exception&)
 	{ }
+	msg->Release();
 	ScriptModule::MPrintf("=== EndScript [%s:%d]\n",
 			Name(), ObjId());
 }
 
-cMultiParm LgScript::SendMessage(int iDest, const char* pszMessage, const cMultiParm& mpData1, const cMultiParm& mpData2, const cMultiParm& mpData3)
+cMultiParm LgScript::SendMessage(int iDest, const char* pszMessage,
+				const cMultiParm& mpData1,
+				const cMultiParm& mpData2,
+				const cMultiParm& mpData3)
 {
 	cMultiParm mpReply;
 	g_pScriptManager->SendMessage2(mpReply, ObjId(), iDest, pszMessage, mpData1, mpData2, mpData3);
 	return mpReply;
 }
 
-void LgScript::PostMessage(int iDest, const char* pszMessage, const cMultiParm& mpData1, const cMultiParm& mpData2, const cMultiParm& mpData3)
+void LgScript::PostMessage(int iDest, const char* pszMessage,
+				const cMultiParm& mpData1,
+				const cMultiParm& mpData2,
+				const cMultiParm& mpData3,
+				unsigned long flags)
 {
-	g_pScriptManager->PostMessage2(ObjId(), iDest, pszMessage, mpData1, mpData2, mpData3);
+	g_pScriptManager->PostMessage2(ObjId(), iDest, pszMessage, mpData1, mpData2, mpData3, flags);
 }
 
-tScrTimer LgScript::SetTimedMessage(const char* pszName, unsigned long iTime, eScrTimedMsgKind eType, const cMultiParm& mpData)
+tScrTimer LgScript::SetTimedMessage(const char* pszName, unsigned long iTime, eScrTimedMsgKind eType,
+				const cMultiParm& mpData)
 {
 	return g_pScriptManager->SetTimedMessage2(ObjId(), pszName, iTime, eType, mpData);
 }
@@ -283,7 +313,8 @@ LgScript* LgScript::Check(State& S, int arg)
 int LgScript::IndexMethod(Handle L)
 {
 	State S(L);
-	// upvalue(1) -> method table
+	// upvalue(1) -> script
+	// upvalue(2) -> method table
 	// stack: metatable key
 	if (!S.copy(2).rawGet(Upvalue(2)).isNil())  // mt key val
 		return 1;
@@ -299,13 +330,6 @@ int LgScript::IndexMethod(Handle L)
 	return 1;
 }
 
-/*
-int LgScript::NewIndexMethod(Handle L)
-{
-	// Stack: script key value
-}
-*/
-
 int LgScript::SendMessageMethod(Handle L)
 {
 	State S(L);
@@ -314,6 +338,7 @@ int LgScript::SendMessageMethod(Handle L)
 	S.setTop(6);
 	if (pScript)
 	{
+		// TODO: object userdata
 		int iTo = S.checkInteger(2);
 		const char* pszMsg = S.checkString(3,NULL);
 		ScriptMultiParm mp1(S), mp2(S), mp3(S);
@@ -324,6 +349,7 @@ int LgScript::SendMessageMethod(Handle L)
 	}
 	else
 	{
+		// TODO: object userdata
 		int iFrom = S.checkInteger(1);
 		int iTo = S.checkInteger(2);
 		const char* pszMsg = S.checkString(3,NULL);
@@ -339,27 +365,33 @@ int LgScript::SendMessageMethod(Handle L)
 
 int LgScript::PostMessageMethod(Handle L)
 {
+	static const char* const MsgFlags[] = {
+		"1", "2", "sendtoproxy", "posttoowner", NULL };
 	State S(L);
 	// Stack: (script|objid) dest message ...
 	LgScript* pScript = Check(S, 1);
-	S.setTop(6);
+	S.setTop(7);
 	if (pScript)
 	{
+		// TODO: object userdata
 		int iTo = S.checkInteger(2);
 		const char* pszMsg = S.checkString(3,NULL);
+		unsigned long flags = S.checkFlags(7, MsgFlags, "");
 		ScriptMultiParm mp1(S), mp2(S), mp3(S);
 		pScript->PostMessage(iTo, pszMsg,
-				mp1.pop(4), mp2.pop(5), mp3.pop(6));
+				mp1.pop(4), mp2.pop(5), mp3.pop(6), flags);
 		return 0;
 	}
 	else
 	{
+		// TODO: object userdata
 		int iFrom = S.checkInteger(1);
 		int iTo = S.checkInteger(2);
 		const char* pszMsg = S.checkString(3,NULL);
+		unsigned long flags = S.checkFlags(7, MsgFlags, "");
 		ScriptMultiParm mp1(S), mp2(S), mp3(S);
 		g_pScriptManager->PostMessage2(iFrom, iTo, pszMsg,
-			mp1.pop(4), mp2.pop(5), mp3.pop(6));
+			mp1.pop(4), mp2.pop(5), mp3.pop(6), flags);
 		return 0;
 	}
 	return 0;
@@ -368,16 +400,14 @@ int LgScript::PostMessageMethod(Handle L)
 static eScrTimedMsgKind getTimedMessageType(State& S, int arg)
 {
 	static const char* const TimerTypes[] = {
-		"kSTM_OneShot", "kSTM_Periodic",
-		"oneshot", "periodic",
-		NULL };
+		"oneshot", "periodic", NULL };
 	if (S.isNil(arg) || S.isBoolean(arg))
 		return S.toBoolean(arg) ? kSTM_Periodic : kSTM_OneShot;
 	eScrTimedMsgKind type;
 	switch (S.checkOption(arg, TimerTypes, "oneshot"))
 	{
 	default: type = kSTM_OneShot; break;
-	case 1: case 3: type = kSTM_Periodic; break;
+	case 1: type = kSTM_Periodic; break;
 	}
 	return type;
 }
@@ -392,16 +422,17 @@ int LgScript::SetTimedMessageMethod(Handle L)
 	if (pScript)
 	{
 		const char* pszMsg = S.checkString(2,NULL);
-		int iTime = S.checkIntOrNumber(3);
+		int iTime = S.checkInteger(3);
 		ScriptMultiParm mp(S);
 		hTimer = pScript->SetTimedMessage(pszMsg, iTime,
 			getTimedMessageType(S, 4), mp.pop(5));
 	}
 	else
 	{
+		// TODO: object userdata
 		int iTo = S.checkInteger(1);
 		const char* pszMsg = S.checkString(2,NULL);
-		int iTime = S.checkIntOrNumber(3);
+		int iTime = S.checkInteger(3);
 		ScriptMultiParm mp(S);
 		hTimer = g_pScriptManager->SetTimedMessage2(iTo, pszMsg, iTime,
 			getTimedMessageType(S, 4), mp.pop(5));
@@ -478,5 +509,24 @@ int LgScript::ClearScriptDataMethod(Handle L)
 	}
 	const char* pszKey = S.checkString(2,NULL);
 	pScript->ClearScriptData(pszKey);
+	return 0;
+}
+
+int LgScript::NewIndexEnvMethod(Handle L)
+{
+	State S(L);
+	// Stack: screnv key value
+	S.rawSet(1, 2, 3);
+	if (S.isFunction(3) && S.isString(2))
+	{
+		size_t len;
+		const char* psz = S.asString(2, &len);
+		S.getMetatable(1).getField("upperindex");  // screnv key value mt upper
+		Buffer upper(S);
+		while (len--)
+			upper.add(toupper(*psz++));
+		upper.push();
+		S.copy(2).rawSet();
+	}
 	return 0;
 }

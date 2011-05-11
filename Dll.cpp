@@ -1,5 +1,5 @@
 /******************************************************************************
- *  shell.rc
+ *  Dll.cpp
  *
  *  This file is part of LgScript
  *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
@@ -18,17 +18,22 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
-#define SCRIPT_VERSION	1,0,0,BUILD
-#define SCRIPT_VERSTRING	"1.0"
+#include <windows.h>
 
-#define SCRIPT_NAME		"lgscript"
-#define SCRIPT_LONGNAME		"LgScript Shell"
-#define SCRIPT_FILENAME		"lgscript.exe"
-#define AUTHOR_NAME		"Tom N Harris"
-
-#define PACKAGE_NAME		"LgScript"
-#define PACKAGE_VERSTRING	SCRIPT_VERSTRING
-
-#include "version.rc"
-
-0	ICON DISCARDABLE	"lgs.ico"
+extern "C"
+BOOL WINAPI
+DllMain (HINSTANCE hDLL, DWORD dwReason, PVOID lpResv)
+{
+	if (dwReason == DLL_PROCESS_ATTACH)
+	{
+		DisableThreadLibraryCalls(hDLL);
+		return TRUE;
+	}
+	return TRUE;
+#ifdef __GNUC__
+	lpResv = lpResv;
+#endif
+#ifdef __BORLANDC__
+#pragma argsused(hDLL,dwReason)
+#endif
+}

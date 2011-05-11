@@ -1,34 +1,33 @@
 /******************************************************************************
- *    LgMessage.cpp
+ *  LgMessage.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 #define LUAX_INLINE
 #include "luax.h"
 #include "LgMessage.h"
 #include "LgMultiParm.h"
+#include "mod/modlib.h"
 #include <cstddef>
 #include <darkhook.h>
 
 using namespace Lgs;
 using namespace luax;
-using namespace std;
 
 const char ScriptMessage::s_ClassName[] = "LgMessage";
 
@@ -82,7 +81,7 @@ void ScriptMessage::push(sScrMsg* msg)
 	int iMsg = m_lua.getTop();
 	const char* pszClass = "";
 #ifdef _MSC_VER
-	if (dynamic_cast<sPersistent*>(msg) != NULL)
+	if (static_cast<sPersistent*>(msg) != NULL)
 		pszClass = msg->GetName();
 #else
 	// GCC & Borland need to use an assembly kludge, so we
@@ -167,7 +166,7 @@ void ScriptMessage::Metatable(State& S, int up)
 	S.push(Iter, up).setField("__pairs", iMT);
 	S.push(Index, up).setField("__index", iMT);
 	S.push(Release).setField("__gc", iMT);
-	S_pushLiteral(S, s_ClassName).setField("class", iMT);
+	S.push(s_ClassName).setField("class", iMT);
 	S.setTop(iMT);
 }
 
@@ -317,7 +316,7 @@ int ScriptMessage::getBooleanField(Handle L)
 	State S(L);
 	sScrMsg* pMsg = Check(S);
 	int iOffset = S.toInteger(Upvalue(1));
-	bool bVal = bool(valueat(BOOL,pMsg,iOffset));
+	bool bVal = bool(valueat(Bool,pMsg,iOffset));
 	S.push(bVal);
 	return 1;
 }
@@ -328,9 +327,7 @@ int ScriptMessage::getVectorField(Handle L)
 	sScrMsg* pMsg = Check(S);
 	int iOffset = S.toInteger(Upvalue(1));
 	mxs_vector& vVal = valueat(mxs_vector,pMsg,iOffset);
-	S.getGlobal("vector")
-	 .push(vVal.x).push(vVal.y).push(vVal.z)
-	 .call(3,1);
+	lmod_newvector(L, vVal.x, vVal.y, vVal.z);
 	return 1;
 }
 
@@ -395,7 +392,8 @@ const ScriptMessage::MetafieldDef ScriptMessage::SimMsgFields[] = {
 };
 
 const ScriptMessage::MetafieldDef ScriptMessage::DarkGameModeMsgFields[] = {
-	{"fEntering", getBooleanField, offsetof(sDarkGameModeScrMsg,fEntering), NULL},
+	{"fResuming", getBooleanField, offsetof(sDarkGameModeScrMsg,fResuming), NULL},
+	{"fSuspending", getBooleanField, offsetof(sDarkGameModeScrMsg,fSuspending), NULL},
 	{NULL, NULL, 0, NULL}
 };
 

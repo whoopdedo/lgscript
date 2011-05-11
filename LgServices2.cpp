@@ -1,33 +1,35 @@
 /******************************************************************************
- *    LgServices2.cpp
+ *  LgServices2.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 #undef _DARKGAME
 #define _DARKGAME 2
 #define _NETWORKING 1
+#define LUAX_INLINE
+#include "luax.h"
+
 #include "LgServices.h"
 #include "ScriptModule.h"
 #include "LgMultiParm.h"
+#include "mod/modlib.h"
 
 #include <lg/scrservices.h>
-#include <lua/vec.h>
 
 namespace Lgs
 {
@@ -137,7 +139,7 @@ int DarkGame2Service::ConfigGetInt(luax::Handle L)
 	DarkGameSrv.set(g_pScriptManager);
 	const char * arg1 = S.checkString(1,NULL);
 	int ret;
-	if (DarkGameSrv->ConfigGetInt(arg1,&ret))
+	if (DarkGameSrv->ConfigGetInt(arg1,ret))
 		S.push(ret);
 	else
 		S.push(luax::Nil());
@@ -149,7 +151,7 @@ int DarkGame2Service::ConfigGetFloat(luax::Handle L)
 	DarkGameSrv.set(g_pScriptManager);
 	const char * arg1 = S.checkString(1,NULL);
 	float ret;
-	if (DarkGameSrv->ConfigGetFloat(arg1,&ret))
+	if (DarkGameSrv->ConfigGetFloat(arg1,ret))
 		S.push(ret);
 	else
 		S.push(luax::Nil());
@@ -307,7 +309,7 @@ int Object2Service::AddMetaPropertyToMany(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrStr arg2 = S.checkString(2,NULL);
 	int ret = ObjectSrv->AddMetaPropertyToMany(arg1,arg2);
-	S.push(luax::Number(ret));
+	S.push(ret);
 	return 1;
 }
 int Object2Service::RemoveMetaPropertyFromMany(luax::Handle L)
@@ -317,7 +319,7 @@ int Object2Service::RemoveMetaPropertyFromMany(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrStr arg2 = S.checkString(2,NULL);
 	int ret = ObjectSrv->RemoveMetaPropertyFromMany(arg1,arg2);
-	S.push(luax::Number(ret));
+	S.push(ret);
 	return 1;
 }
 int Object2Service::RenderedThisFrame(luax::Handle L)
@@ -550,53 +552,6 @@ int Property2Service::SetLocal(luax::Handle L)
 	S.push(ret == 0);
 	return 1;
 }
-#if 0
-int Property2Service::Add(luax::Handle L)
-{
-	luax::State S(L);
-	PropertySrv.set(g_pScriptManager);
-	S.setTop(2);
-	object arg1 = S.checkInteger(1);
-	const char * arg2 = S.checkString(2,NULL);
-	long ret = PropertySrv->Add(arg1,arg2);
-	S.push(ret == 0);
-	return 1;
-}
-int Property2Service::Remove(luax::Handle L)
-{
-	luax::State S(L);
-	PropertySrv.set(g_pScriptManager);
-	S.setTop(2);
-	object arg1 = S.checkInteger(1);
-	const char * arg2 = S.checkString(2,NULL);
-	long ret = PropertySrv->Remove(arg1,arg2);
-	S.push(ret == 0);
-	return 1;
-}
-int Property2Service::CopyFrom(luax::Handle L)
-{
-	luax::State S(L);
-	PropertySrv.set(g_pScriptManager);
-	S.setTop(3);
-	object arg1 = S.checkInteger(1);
-	const char * arg2 = S.checkString(2,NULL);
-	object arg3 = S.checkInteger(3);
-	long ret = PropertySrv->CopyFrom(arg1,arg2,arg3);
-	S.push(ret == 0);
-	return 1;
-}
-int Property2Service::Possessed(luax::Handle L)
-{
-	luax::State S(L);
-	PropertySrv.set(g_pScriptManager);
-	S.setTop(2);
-	object arg1 = S.checkInteger(1);
-	const char * arg2 = S.checkString(2,NULL);
-	bool ret = PropertySrv->Possessed(arg1,arg2);
-	S.push(ret);
-	return 1;
-}
-#endif
 
 const luax::Registry Sound2Service::Methods[] = {
 	{"Play",Play},
@@ -611,15 +566,6 @@ const luax::Registry Sound2Service::Methods[] = {
 	{"PreLoad",PreLoad},
 	{NULL,NULL}
 };
-// Play(obj,schema)
-// Play(obj,schema,loop)
-// Play(obj,schema,obj)
-// Play(obj,schema,vector)
-// Play(obj,schema,loop,net)
-// Play(obj,schema,obj,loop)
-// Play(obj,schema,vector,loop)
-// Play(obj,schema,obj,loop,net)
-// Play(obj,schema,vector,loop,net)
 int Sound2Service::Play(luax::Handle L)
 {
 	luax::State S(L);
@@ -630,8 +576,8 @@ int Sound2Service::Play(luax::Handle L)
 	if (!(S.isNoneOrNil(3) || S.isBoolean(3)))
 	{
 		eSoundSpecial arg4 = S.toBoolean(4) ? kSoundLoop : kSoundNormal;
-		eSoundNetwork arg5 = eSoundNetwork(S.checkOption(5,SoundNetwork,"Default"));
-		if (S.isInteger(3))
+		eSoundNetwork arg5 = eSoundNetwork(S.checkOption(5,SoundNetwork,"normal"));
+		if (S.isNumber(3))
 		{
 			object arg3 = S.toInteger(3);
 			SoundSrv->PlayAtObject(ret,arg1,arg2,arg3,arg4,arg5);
@@ -648,7 +594,7 @@ int Sound2Service::Play(luax::Handle L)
 	else
 	{
 		eSoundSpecial arg3 = S.toBoolean(3) ? kSoundLoop : kSoundNormal;
-		eSoundNetwork arg4 = eSoundNetwork(S.checkOption(4,SoundNetwork,"Default"));
+		eSoundNetwork arg4 = eSoundNetwork(S.checkOption(4,SoundNetwork,"normal"));
 		SoundSrv->Play(ret,arg1,arg2,arg3,arg4);
 	}
 	S.push(bool(ret));
@@ -661,7 +607,7 @@ int Sound2Service::PlayAmbient(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrStr arg2 = S.checkString(2,NULL);
 	eSoundSpecial arg3 = S.toBoolean(3) ? kSoundLoop : kSoundNormal;
-	eSoundNetwork arg4 = eSoundNetwork(S.checkOption(4,SoundNetwork,"Default"));
+	eSoundNetwork arg4 = eSoundNetwork(S.checkOption(4,SoundNetwork,"normal"));
 	true_bool ret;
 	SoundSrv->PlayAmbient(ret,arg1,arg2,arg3,arg4);
 	S.push(bool(ret));
@@ -676,8 +622,8 @@ int Sound2Service::PlaySchema(luax::Handle L)
 	object arg2 = S.checkInteger(2);
 	if (!(S.isNoneOrNil(3) || S.isBoolean(3)))
 	{
-		eSoundNetwork arg4 = eSoundNetwork(S.checkOption(4,SoundNetwork,"Default"));
-		if (S.isInteger(3))
+		eSoundNetwork arg4 = eSoundNetwork(S.checkOption(4,SoundNetwork,"normal"));
+		if (S.isNumber(3))
 		{
 			object arg3 = S.toInteger(3);
 			SoundSrv->PlaySchemaAtObject(ret,arg1,arg2,arg3,arg4);
@@ -693,7 +639,7 @@ int Sound2Service::PlaySchema(luax::Handle L)
 	}
 	else
 	{
-		eSoundNetwork arg3 = eSoundNetwork(S.checkOption(3,SoundNetwork,"Default"));
+		eSoundNetwork arg3 = eSoundNetwork(S.checkOption(3,SoundNetwork,"normal"));
 		SoundSrv->PlaySchema(ret,arg1,arg2,arg3);
 	}
 	S.push(bool(ret));
@@ -705,7 +651,7 @@ int Sound2Service::PlaySchemaAmbient(luax::Handle L)
 	SoundSrv.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
 	object arg2 = S.checkInteger(2);
-	eSoundNetwork arg3 = eSoundNetwork(S.checkOption(3,SoundNetwork,"Default"));
+	eSoundNetwork arg3 = eSoundNetwork(S.checkOption(3,SoundNetwork,"normal"));
 	true_bool ret;
 	SoundSrv->PlaySchemaAmbient(ret,arg1,arg2,arg3);
 	S.push(bool(ret));
@@ -719,8 +665,8 @@ int Sound2Service::PlayEnvSchema(luax::Handle L)
 	cScrStr arg2 = S.checkString(2,NULL);
 	object arg3 = S.optInteger(3);
 	object arg4 = S.optInteger(4);
-	eEnvSoundLoc arg5 = eEnvSoundLoc(S.checkOption(5,EnvSoundLoc,"OnObj"));
-	eSoundNetwork arg6 = eSoundNetwork(S.checkOption(6,SoundNetwork,"Default"));
+	eEnvSoundLoc arg5 = eEnvSoundLoc(S.checkOption(5,EnvSoundLoc,"onobj"));
+	eSoundNetwork arg6 = eSoundNetwork(S.checkOption(6,SoundNetwork,"normal"));
 	true_bool ret;
 	SoundSrv->PlayEnvSchema(ret,arg1,arg2,arg3,arg4,arg5,arg6);
 	S.push(bool(ret));

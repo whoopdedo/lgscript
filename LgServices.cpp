@@ -1,41 +1,39 @@
 /******************************************************************************
- *    LgServices.cpp
+ *  LgServices.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
+#define LUAX_INLINE
+#include "luax.h"
+
 #include "LgServices.h"
 #include "ScriptModule.h"
 #include "LgMultiParm.h"
 #include "LgLinkset.h"
 #include "utils.h"
+#include "mod/modlib.h"
 
 #include <lg/iids.h>
 #include <lg/links.h>
 #include <lg/properties.h>
 
-#include <lua/vec.h>
-
 #include <cstdlib>
 #include <cmath>
-#if RAND_MAX!=32767
-#error RAND_MAX != 32767
-#endif
 
 namespace Lgs
 {
@@ -49,7 +47,7 @@ SService<ICameraSrv> ScriptServices::CameraSrv;
 //SService<IDamageSrv> ScriptServices::DamageSrv;
 SService<IDarkGameSrv> ScriptServices::DarkGameSrv;
 SService<IDarkUISrv> ScriptServices::DarkUISrv;
-//SService<IDataSrv> ScriptServices::DataSrv;
+SService<IDataSrv> ScriptServices::DataSrv;
 SService<IDebugScrSrv> ScriptServices::DebugSrv;
 SService<IDoorSrv> ScriptServices::DoorSrv;
 SService<IDarkInvSrv> ScriptServices::DarkInvSrv;
@@ -82,7 +80,6 @@ SInterface<IObjectSystem> ScriptServices::ObjectSys;
 SInterface<ITraitManager> ScriptServices::TraitMan;
 SInterface<IContainSys> ScriptServices::ContainSys;
 SInterface<IDamageModel> ScriptServices::DamageSys;
-SInterface<IGameStrings> ScriptServices::GameStringSys;
 SInterface<IKeySys> ScriptServices::KeySys;
 SInterface<IQuestData> ScriptServices::QuestData;
 SInterface<IReactions> ScriptServices::ARReactions;
@@ -105,7 +102,6 @@ const ScriptServices::ServiceDef ScriptServices::Thief1Services[] = {
 	{"KeySrv",KeyService::Methods},
 	{"LightSrv",LightService::Methods},
 	{"LinkSrv",LinkService::Methods},
-//	{"LinkToolsSrv",LinkToolsService::Methods},
 	{"LockSrv",LockService::Methods},
 	{"ObjectSrv",Object1Service::Methods},
 	{"PGroupSrv",PGroupService::Methods},
@@ -138,7 +134,6 @@ const ScriptServices::ServiceDef ScriptServices::Thief2Services[] = {
 	{"KeySrv",KeyService::Methods},
 	{"LightSrv",LightService::Methods},
 	{"LinkSrv",LinkService::Methods},
-//	{"LinkToolsSrv",LinkToolsService::Methods},
 	{"LockSrv",LockService::Methods},
 	{"NetworkingSrv",Networking2Service::Methods},
 	{"ObjectSrv",Object2Service::Methods},
@@ -171,7 +166,6 @@ const ScriptServices::ServiceDef ScriptServices::SShock2Services[] = {
 	{"KeySrv",KeyService::Methods},
 	{"LightSrv",LightService::Methods},
 	{"LinkSrv",LinkService::Methods},
-//	{"LinkToolsSrv",LinkToolsService::Methods},
 	{"LockSrv",LockService::Methods},
 	{"NetworkingSrv",NetworkingService::Methods},
 	{"ObjectSrv",Object3Service::Methods},
@@ -217,34 +211,12 @@ void ScriptServices::Init(luax::State& S)
 		srv = Thief1Services;
 		ScriptModule::MPrintf("--- ScriptServices Thief1\n");
 	}
-#if 0
-	SInterface<IPropertyManager> pPM(g_pScriptManager);
-	SInterface<IProperty> pProp;
-	pProp = pPM->GetPropertyNamed("TripFlags");
-	if (-1 != pProp->GetID())
-	{
-		srv = SShock2Services;
-		ScriptModule::MPrintf("--- ScriptServices SShock2\n");
-	}
-	else
-	{
-		pProp = pPM->GetPropertyNamed("TrapFlags");
-		if (-1 != pProp->GetID())
-		{
-			srv = Thief2Services;
-			ScriptModule::MPrintf("--- ScriptServices Thief2\n");
-		}
-		else
-		{
-			srv = Thief1Services;
-			ScriptModule::MPrintf("--- ScriptServices Thief1\n");
-		}
-	}
-#endif
 	S.registerLib(module, "lgs");
 	for (; srv->name; srv++)
 	{
-		S.createTable(0,35)
+		size_t num = 0;
+		while (srv->reg[num].name) ++num;
+		S.createTable(0,num)
 		 .registerLib(srv->reg)
 		 .setField(srv->name);
 	}
@@ -412,8 +384,8 @@ const luax::Registry AIService::Methods[] = {
 	{"StartConversation",StartConversation},
 	{NULL,NULL}
 };
-const char* const AIService::ScriptSpeed[] = { "Slow","Normal","Fast",NULL };
-const char* const AIService::ActionPriority[] = { "Low","Normal","High",NULL };
+const char* const AIService::ScriptSpeed[] = { "slow","normal","fast",NULL };
+const char* const AIService::ActionPriority[] = { "low","normal","high",NULL };
 int AIService::MakeGotoObjLoc(luax::Handle L)
 {
 	luax::State S(L);
@@ -421,8 +393,8 @@ int AIService::MakeGotoObjLoc(luax::Handle L)
 	S.setTop(5);
 	int arg1 = S.checkInteger(1);  // AI object
 	object arg2 = S.checkInteger(2); // destination
-	eAIScriptSpeed arg3 = eAIScriptSpeed(S.checkOption(3,ScriptSpeed,"Normal"));
-	eAIActionPriority arg4 = eAIActionPriority(S.checkOption(4,ActionPriority,"Normal"));
+	eAIScriptSpeed arg3 = eAIScriptSpeed(S.checkOption(3,ScriptSpeed,"normal"));
+	eAIActionPriority arg4 = eAIActionPriority(S.checkOption(4,ActionPriority,"normal"));
 	ScriptMultiParm mp5(S); cMultiParm const& arg5 = mp5.pop(5);
 	true_bool ret;
 	AISrv->MakeGotoObjLoc(ret,arg1,arg2,arg3,arg4,arg5);
@@ -437,7 +409,7 @@ int AIService::MakeFrobObjWith(luax::Handle L)
 	int arg1 = S.checkInteger(1);
 	object arg2 = S.checkInteger(2);
 	object arg3 = S.checkInteger(3);
-	eAIActionPriority arg4 = eAIActionPriority(S.checkOption(4,ActionPriority,"Normal"));
+	eAIActionPriority arg4 = eAIActionPriority(S.checkOption(4,ActionPriority,"normal"));
 	ScriptMultiParm mp5(S); cMultiParm const& arg5 = mp5.pop(5);
 	true_bool ret;
 	AISrv->MakeFrobObjWith(ret,arg1,arg2,arg3,arg4,arg5);
@@ -451,7 +423,7 @@ int AIService::MakeFrobObj(luax::Handle L)
 	S.setTop(4);
 	int arg1 = S.checkInteger(1);
 	object arg2 = S.checkInteger(2);
-	eAIActionPriority arg3 = eAIActionPriority(S.checkOption(3,ActionPriority,"Normal"));
+	eAIActionPriority arg3 = eAIActionPriority(S.checkOption(3,ActionPriority,"normal"));
 	ScriptMultiParm mp4(S); cMultiParm const& arg4 = mp4.pop(4);
 	true_bool ret;
 	AISrv->MakeFrobObj(ret,arg1,arg2,arg3,arg4);
@@ -472,7 +444,7 @@ int AIService::SetMinimumAlert(luax::Handle L)
 	luax::State S(L);
 	AISrv.set(g_pScriptManager);
 	int arg1 = S.checkInteger(1);
-	eAIScriptAlertLevel arg2 = eAIScriptAlertLevel(S.checkIntOrNumber(2));
+	eAIScriptAlertLevel arg2 = eAIScriptAlertLevel(S.checkInteger(2));
 	AISrv->SetMinimumAlert(arg1,arg2);
 	return 0;
 }
@@ -489,7 +461,7 @@ int AIService::SetScriptFlags(luax::Handle L)
 	luax::State S(L);
 	AISrv.set(g_pScriptManager);
 	int arg1 = S.checkInteger(1);
-	int arg2 = S.checkInteger(2);
+	int arg2 = S.toBoolean(2) ? 1 : 0;
 	AISrv->SetScriptFlags(arg1,arg2);
 	return 0;
 }
@@ -629,7 +601,7 @@ const luax::Registry ContainService::Methods[] = {
 	{NULL,NULL}
 };
 const char* const ContainService::ContainsType[] = {
-	"Generic","Belt","Hand","Alternate",NULL
+	"generic","belt","hand","alternate",NULL
 };
 int ContainService::Add(luax::Handle L)
 {
@@ -642,7 +614,7 @@ int ContainService::Add(luax::Handle L)
 	if (S.getType(3) == luax::TString)
 		arg3 = - S.checkOption(3,ContainsType);
 	else
-		arg3 = S.optIntOrNumber(3);
+		arg3 = S.optInteger(3);
 	long ret = ContainSys->Add(arg2,arg1,arg3,arg4);
 	S.push(ret == 0);
 	return 1;
@@ -672,7 +644,7 @@ int ContainService::StackAdd(luax::Handle L)
 	luax::State S(L);
 	ContainSys.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
-	int arg2 = S.checkIntOrNumber(2);
+	int arg2 = S.checkInteger(2);
 	long ret = ContainSys->StackAdd(arg1,arg2,2);
 	S.push(ret);
 	return 1;
@@ -684,7 +656,7 @@ int ContainService::IsHeld(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	object arg2 = S.checkInteger(2);
 	int ret = ContainSys->IsHeld(arg1,arg2);
-	if (ret == MAXLONG)
+	if (ret == LONG_MAX)
 		S.push(luax::Nil());
 	else
 		S.push(ret);
@@ -710,7 +682,6 @@ const luax::Registry DamageService::Methods[] = {
 	{"Terminate",Terminate},
 	{NULL,NULL}
 };
-// FIXME: damage model return types are probably an enum, so should use strings
 int DamageService::Damage(luax::Handle L)
 {
 	luax::State S(L);
@@ -718,7 +689,7 @@ int DamageService::Damage(luax::Handle L)
 	DamageSys.set(g_pScriptManager);
 	int arg1 = S.checkInteger(1);
 	int arg2 = S.checkInteger(2);
-	sd.damage = S.checkIntOrNumber(3);
+	sd.damage = S.checkInteger(3);
 	sd.type = S.optInteger(4);
 	unsigned long ret = DamageSys->DamageObject(arg1,arg2,&sd,NULL,0);
 	S.push(luax::Integer(ret));
@@ -795,15 +766,15 @@ const luax::Registry DarkInvService::Methods[] = {
 int DarkInvService::CapabilityControl(luax::Handle L)
 {
 	static const char* const InvCap[] = {
-		"Cycle","WorldFrob","WorldFocus","InvFrob",NULL
+		"cycle","worldfrob","worldfocus","invfrob",NULL
 	};
 	static const char* const InvControl[] = {
-		"On","Off","Toggle",NULL
+		"on","off","toggle",NULL
 	};
 	luax::State S(L);
 	DarkInvSrv.set(g_pScriptManager);
 	eDrkInvCap arg1 = eDrkInvCap(S.checkOption(1,InvCap));
-	eDrkInvControl arg2 = eDrkInvControl(S.checkOption(2,InvControl,"Toggle"));
+	eDrkInvControl arg2 = eDrkInvControl(S.checkOption(2,InvControl,"toggle"));
 	DarkInvSrv->CapabilityControl(arg1,arg2);
 	return 0;
 }
@@ -884,7 +855,7 @@ int DarkUIService::TextMessage(luax::Handle L)
 	if (S.getType(3) == luax::TString)
 		arg3 = strtocolor(S.asString(3));
 	else
-		arg3 = S.optIntOrNumber(3,-1001);
+		arg3 = S.optInteger(3,-1001);
 	DarkUISrv->TextMessage(arg1,arg3,arg2);
 	return 0;
 }
@@ -927,7 +898,7 @@ int DarkUIService::InvSelect(luax::Handle L)
 	DarkUISrv.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
 	long ret = DarkUISrv->InvSelect(arg1);
-	S.push(ret >= 0);
+	S.push(ret == 0);
 	return 1;
 }
 int DarkUIService::IsCommandBound(luax::Handle L)
@@ -964,31 +935,33 @@ const luax::Registry DataService::Methods[] = {
 int DataService::GetString(luax::Handle L)
 {
 	luax::State S(L);
-	GameStringSys.set(g_pScriptManager);
+	DataSrv.set(g_pScriptManager);
 	const char * arg1 = S.checkString(1,NULL);
 	const char * arg2 = S.checkString(2,NULL);
 	const char * arg4 = S.optString(3,NULL,"strings");
-	cAnsiStr ret;
-	GameStringSys->FetchString(ret,arg1,arg2,NULL,arg4);
-	S.push(ret,ret.GetLength());
+	cScrStr ret;
+	DataSrv->GetString(ret,arg1,arg2,"",arg4);
+	S.push(ret);
+	ret.Free();
 	return 1;
 }
 int DataService::GetObjString(luax::Handle L)
 {
 	luax::State S(L);
-	GameStringSys.set(g_pScriptManager);
+	DataSrv.set(g_pScriptManager);
 	int arg1 = S.checkInteger(1);
 	const char * arg2 = S.checkString(2,NULL);
-	cAnsiStr ret;
-	GameStringSys->FetchObjString(ret,arg1,arg2);
-	S.push(ret,ret.GetLength());
+	cScrStr ret;
+	DataSrv->GetObjString(ret,arg1,arg2);
+	S.push(ret);
+	ret.Free();
 	return 1;
 }
 int DataService::DirectRand(luax::Handle L)
 {
 	luax::State S(L);
-	int ret = std::rand();
-	S.push(luax::Number(ret));
+	int ret = std::rand() & 0x7FFF;
+	S.push(ret);
 	return 1;
 }
 int DataService::RandInt(luax::Handle L)
@@ -1094,7 +1067,7 @@ int DoorService::GetDoorState(luax::Handle L)
 	DoorSrv.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
 	int ret = DoorSrv->GetDoorState(arg1);
-	if (ret == 5)
+	if (ret == kDoorStateInvalid)
 		S.push(luax::Nil());
 	else
 		S.push(ret);
@@ -1142,10 +1115,10 @@ const luax::Registry LightService::Methods[] = {
 	{NULL,NULL}
 };
 const char* const LightService::LightMode[] = {
-	"FlipMinMax","SlideSmoothly","Random",
-	"MinBrightness","MaxBrightness","ZeroBrightness",
-	"SmoothlyBrighten","SmoothlyDim",
-	"RandomButCoherent","FlickerMinMax",
+	"flipminmax","slidesmoothly","random",
+	"minbrightness","maxbrightness","zerobrightness",
+	"smoothlybrighten","smoothlydim",
+	"randombutcoherent","flickerminmax",
 	NULL
 };
 int LightService::Set(luax::Handle L)
@@ -1251,8 +1224,7 @@ const luax::Registry LinkService::Methods[] = {
 };
 short LinkService::GetRelationNamed(const char * name)
 {
-	SInterface<IRelation> rel;
-	rel = LinkMan->GetRelationNamed(name);
+	SInterface<IRelation> rel(LinkMan->GetRelationNamed(name));
 	if (!rel)
 		return 0;
 	return rel->GetID();
@@ -1292,7 +1264,7 @@ int LinkService::AnyExist(luax::Handle L)
 {
 	luax::State S(L);
 	LinkMan.set(g_pScriptManager);
-	int arg2 = S.checkInteger(2);
+	int arg2 = S.optInteger(2);
 	int arg3 = S.optInteger(3);
 	short arg1 = 0;
 	if (S.getType(1) == luax::TString)
@@ -1307,8 +1279,7 @@ int LinkService::AnyExist(luax::Handle L)
 	}
 	else
 		arg1 = S.checkInteger(1);
-	SInterface<ILinkQuery> q;
-	q = LinkMan->Query(arg2,arg3,arg1);
+	SInterface<ILinkQuery> q(LinkMan->Query(arg2,arg3,arg1));
 	bool ret = q && !q->Done();
 	S.push(ret);
 	return 1;
@@ -1317,7 +1288,7 @@ int LinkService::GetAll(luax::Handle L)
 {
 	luax::State S(L);
 	LinkMan.set(g_pScriptManager);
-	int arg2 = S.checkInteger(2);
+	int arg2 = S.optInteger(2);
 	int arg3 = S.optInteger(3);
 	short arg1 = 0;
 	if (S.getType(1) == luax::TString)
@@ -1332,8 +1303,7 @@ int LinkService::GetAll(luax::Handle L)
 	}
 	else
 		arg1 = S.checkInteger(1);
-	linkset ret;
-	ret = LinkMan->Query(arg2,arg3,arg1);
+	SInterface<ILinkQuery> ret(LinkMan->Query(arg2,arg3,arg1));
 	new(S) LinkSet(ret);
 	return 1;
 }
@@ -1341,7 +1311,7 @@ int LinkService::GetOne(luax::Handle L)
 {
 	luax::State S(L);
 	LinkMan.set(g_pScriptManager);
-	int arg2 = S.checkInteger(2);
+	int arg2 = S.optInteger(2);
 	int arg3 = S.optInteger(3);
 	short arg1 = 0;
 	if (S.getType(1) == luax::TString)
@@ -1356,8 +1326,7 @@ int LinkService::GetOne(luax::Handle L)
 	}
 	else
 		arg1 = S.checkInteger(1);
-	SInterface<ILinkQuery> q;
-	q = LinkMan->Query(arg2,arg3,arg1);
+	SInterface<ILinkQuery> q(LinkMan->Query(arg2,arg3,arg1));
 	if (q && !q->Done())
 	{
 		long ret = q->ID();
@@ -1375,7 +1344,7 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 	const char * arg2 = S.checkString(2,NULL);
 	if (arg2[0] == '\0')
 		S.argError(2,"invalid script message");
-	short arg3;
+	short arg3 = 0;
 	if (S.getType(3) == luax::TString)
 	{
 		const char * str3 = S.asString(3);
@@ -1390,32 +1359,33 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 		arg3 = S.checkInteger(3);
 	if (S.isNoneOrNil(4))
 	{
-		SInterface<ILinkQuery> q;
+		SInterface<ILinkQuery> q(LinkMan->Query(arg1,0,arg3));
 		sLink sl;
-		q = LinkMan->Query(arg1,0,arg3);
 		for (; !q->Done(); q->Next())
 		{
 			q->Link(&sl);
-			g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,cMultiParm::Undef,cMultiParm::Undef,cMultiParm::Undef);
+			g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,
+					cMultiParm::Undef,cMultiParm::Undef,cMultiParm::Undef,kScrMsgPostToOwner);
 		}
 	}
 	else if (S.isFunction(4))
 	{
-		SInterface<ILinkQuery> q;
+		SInterface<ILinkQuery> q(LinkMan->Query(arg1,0,arg3));
 		sLink sl;
-		q = LinkMan->Query(arg1,0,arg3);
 		for (; !q->Done(); q->Next())
 		{
 			q->Link(&sl);
 			S.copy(4)
-			 .push(sl.dest)
-			 .push(sl.source)
+			 .push(luax::Integer(sl.dest))
+			 .push(luax::Integer(sl.source))
 			 .push(luax::Integer(sl.flavor))
-			 .call(3,1);
+			 .push(q->ID())
+			 .call(4,1);
 			if (!S.isNil())
 			{
 				ScriptMultiParm ret(S);
-				g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,ret,cMultiParm::Undef,cMultiParm::Undef);
+				g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,ret,
+						cMultiParm::Undef,cMultiParm::Undef,kScrMsgPostToOwner);
 			}
 			S.pop();
 		}
@@ -1423,9 +1393,8 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 	else
 	{
 		SInterface<IStructDescTools> StructTools(g_pScriptManager);
-		SInterface<IRelation> rel;
+		SInterface<IRelation> rel(LinkMan->GetRelation(arg3));
 		const sStructDesc * sd = NULL;
-		rel = LinkMan->GetRelation(arg3);
 		if (rel->DescribeData()->uiTypeSize > 0)
 			sd = StructTools->Lookup(rel->DescribeData()->szTypeName);
 		if (sd && StructTools->IsSimple(sd))
@@ -1437,9 +1406,8 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 				arg4 = S.toBoolean(4) ? "TRUE" : "FALSE";
 			else
 				arg4 = S.asString(4);
-			SInterface<ILinkQuery> q;
+			SInterface<ILinkQuery> q(LinkMan->Query(arg1,0,arg3));
 			sLink sl;
-			q = LinkMan->Query(arg1,0,arg3);
 			for (; !q->Done(); q->Next())
 			{
 				void * p = q->Data();
@@ -1453,7 +1421,8 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 								sl.dest,arg2,
 								arg4,
 								cMultiParm::Undef,
-								cMultiParm::Undef);
+								cMultiParm::Undef,
+								kScrMsgPostToOwner);
 				}
 				else
 				{
@@ -1462,7 +1431,8 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 								sl.dest,arg2,
 								arg4,
 								cMultiParm::Undef,
-								cMultiParm::Undef);
+								cMultiParm::Undef,
+								kScrMsgPostToOwner);
 				}
 			}
 		}
@@ -1470,13 +1440,13 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 		{
 			// Send extra data with message, but don't filter links.
 			ScriptMultiParm mp4(S); cMultiParm const& arg4 = mp4.pop(4);
-			SInterface<ILinkQuery> q;
+			SInterface<ILinkQuery> q(LinkMan->Query(arg1,0,arg3));
 			sLink sl;
-			q = LinkMan->Query(arg1,0,arg3);
 			for (; !q->Done(); q->Next())
 			{
 				q->Link(&sl);
-				g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,arg4,cMultiParm::Undef,cMultiParm::Undef);
+				g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,arg4,
+						cMultiParm::Undef,cMultiParm::Undef,kScrMsgPostToOwner);
 			}
 		}
 	}
@@ -1546,6 +1516,10 @@ int LinkService::GetAllInherited(luax::Handle L)
 	}
 	else
 		arg1 = S.checkInteger(1);
+	if (!arg2)
+		S.argError(2,"invalid object");
+	if (!arg3)
+		S.argError(3,"invalid object");
 	linkset ret;
 	LinkSrv->GetAllInherited(ret,arg1,arg2,arg3);
 	new(S) LinkSet(ret);
@@ -1556,7 +1530,7 @@ int LinkService::GetAllInheritedSingle(luax::Handle L)
 	luax::State S(L);
 	LinkSrv.set(g_pScriptManager);
 	object arg2 = S.checkInteger(2);
-	object arg3 = S.checkInteger(3);
+	object arg3 = S.optInteger(3);
 	linkkind arg1;
 	if (S.getType(1) == luax::TString)
 	{
@@ -1571,6 +1545,8 @@ int LinkService::GetAllInheritedSingle(luax::Handle L)
 	}
 	else
 		arg1 = S.checkInteger(1);
+	if (!arg2)
+		S.argError(2,"invalid object");
 	linkset ret;
 	LinkSrv->GetAllInheritedSingle(ret,arg1,arg2,arg3);
 	new(S) LinkSet(ret);
@@ -1593,8 +1569,7 @@ int LinkService::LinkKindName(luax::Handle L)
 	luax::State S(L);
 	LinkMan.set(g_pScriptManager);
 	short arg1 = S.checkInteger(1);
-	SInterface<IRelation> rel;
-	rel = LinkMan->GetRelation(arg1);
+	SInterface<IRelation> rel(LinkMan->GetRelation(arg1));
 	if (rel)
 		S.push(rel->Describe()->szName);
 	else
@@ -1822,9 +1797,7 @@ int ObjectService::Position(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrVec ret;
 	ObjectSrv->Position(ret,arg1);
-	S.getGlobal("vector")
-	 .push(ret.x).push(ret.y).push(ret.z)
-	 .call(3,1);
+	lmod_newvector(L, ret.x, ret.y, ret.z);
 	return 1;
 }
 int ObjectService::Facing(luax::Handle L)
@@ -1834,9 +1807,7 @@ int ObjectService::Facing(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrVec ret;
 	ObjectSrv->Facing(ret,arg1);
-	S.getGlobal("vector")
-	 .push(ret.x).push(ret.y).push(ret.z)
-	 .call(3,1);
+	lmod_newvector(L, ret.x, ret.y, ret.z);
 	return 1;
 }
 int ObjectService::Teleport(luax::Handle L)
@@ -1846,7 +1817,7 @@ int ObjectService::Teleport(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrVec arg2,arg3;
 	object arg4 = 0;
-	if (S.getType(2) == luax::TInteger)
+	if (S.getType(2) == luax::TNumber)
 	{
 		arg4 = S.toInteger(2);
 	}
@@ -1932,7 +1903,7 @@ int PGroupService::SetActive(luax::Handle L)
 }
 
 const char* const PhysService::PhysMessages[] = {
-	"Collision","Contact","EnterExit","FellAsleep",NULL
+	"collision","contact","enterexit","fellasleep",NULL
 };
 int PhysService::SubscribeMsg(luax::Handle L)
 {
@@ -1955,7 +1926,7 @@ int PhysService::UnsubscribeMsg(luax::Handle L)
 int PhysService::LaunchProjectile(luax::Handle L)
 {
 	static const char* const EmitFlags[] = {
-		"NoPhysics","PushOut","RelativeVelocity","Gravity",NULL
+		"nophysics","pushout","relativevelocity","gravity",NULL
 	};
 	luax::State S(L);
 	PhysSrv.set(g_pScriptManager);
@@ -1997,9 +1968,7 @@ int PhysService::GetVelocity(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrVec ret;
 	PhysSrv->GetVelocity(arg1,ret);
-	S.getGlobal("vector")
-	 .push(ret.x).push(ret.y).push(ret.z)
-	 .call(3,1);
+	lmod_newvector(L, ret.x, ret.y, ret.z);
 	return 1;
 }
 
@@ -2123,10 +2092,9 @@ int PropertyService::Add(luax::Handle L)
 	PropertyMan.set(g_pScriptManager);
 	int arg1 = S.checkInteger(1);
 	const char * arg2 = S.checkString(2,NULL);
-	if (arg1 != 0 && arg2 != NULL)
+	if (arg1 && arg2)
 	{
-		SInterface<IProperty> p;
-		p = PropertyMan->GetPropertyNamed(arg2);
+		SInterface<IProperty> p(PropertyMan->GetPropertyNamed(arg2));
 		if (p->GetID() != -1)
 		{
 			long ret = p->Create(arg1);
@@ -2145,10 +2113,9 @@ int PropertyService::Remove(luax::Handle L)
 	PropertyMan.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
 	const char * arg2 = S.checkString(2,NULL);
-	if (arg1 != 0 && arg2 != NULL)
+	if (arg1 && arg2)
 	{
-		SInterface<IProperty> p;
-		p = PropertyMan->GetPropertyNamed(arg2);
+		SInterface<IProperty> p(PropertyMan->GetPropertyNamed(arg2));
 		if (p->GetID() != -1)
 		{
 			long ret = p->Delete(arg1);
@@ -2168,10 +2135,9 @@ int PropertyService::CopyFrom(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	const char * arg2 = S.checkString(2,NULL);
 	object arg3 = S.checkInteger(3);
-	if (arg1 != 0 && arg3 != 0 && arg2 != NULL)
+	if (arg1 && arg3 && arg2)
 	{
-		SInterface<IProperty> p;
-		p = PropertyMan->GetPropertyNamed(arg2);
+		SInterface<IProperty> p(PropertyMan->GetPropertyNamed(arg2));
 		if (p->GetID() != -1)
 		{
 			long ret = p->Copy(arg1,arg3);
@@ -2182,8 +2148,6 @@ int PropertyService::CopyFrom(luax::Handle L)
 	}
 	else
 		S.push(false);
-	long ret = PropertySrv->CopyFrom(arg1,arg2,arg3);
-	S.push(ret == 0);
 	return 1;
 }
 int PropertyService::Possessed(luax::Handle L)
@@ -2192,10 +2156,9 @@ int PropertyService::Possessed(luax::Handle L)
 	PropertyMan.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
 	const char * arg2 = S.checkString(2,NULL);
-	if (arg1 != 0 && arg2 != NULL)
+	if (arg1 && arg2)
 	{
-		SInterface<IProperty> p;
-		p = PropertyMan->GetPropertyNamed(arg2);
+		SInterface<IProperty> p(PropertyMan->GetPropertyNamed(arg2));
 		if (p->GetID() != -1)
 		{
 			bool ret = p->IsRelevant(arg1);
@@ -2234,13 +2197,16 @@ const luax::Registry QuestService::Methods[] = {
 	{"Delete",Delete},
 	{NULL,NULL}
 };
+const char* const QuestService::QuestType[] = {
+	"mission","campaign","any",NULL
+};
 int QuestService::SubscribeMsg(luax::Handle L)
 {
 	luax::State S(L);
 	QuestData.set(g_pScriptManager);
 	int arg1 = S.checkInteger(1);
 	const char * arg2 = S.checkString(2,NULL);
-	int arg3 = S.optInteger(3,2);
+	int arg3 = S.checkOption(3,QuestType,"any");
 	QuestData->SubscribeMsg(arg1,arg2,arg3);
 	return 0;
 }
@@ -2258,8 +2224,16 @@ int QuestService::Set(luax::Handle L)
 	luax::State S(L);
 	QuestData.set(g_pScriptManager);
 	const char * arg1 = S.checkString(1,NULL);
-	int arg2 = S.checkIntOrNumber(2);
-	int arg3 = S.toBoolean(3);
+	int arg2 = S.checkInteger(2);
+	int arg3;
+	if (S.getType(3) == luax::TString)
+	{
+		arg3 = S.checkOption(3,QuestType);
+		if (arg3 == 2)
+			arg3 = 0;
+	}
+	else
+		arg3 = S.toBoolean(3);
 	if (!QuestData->Exists(arg1))
 		QuestData->Create(arg1,arg2,arg3);
 	else
@@ -2294,10 +2268,10 @@ int QuestService::Delete(luax::Handle L)
 }
 
 const char* const SoundService::EnvSoundLoc[] = {
-	"OnObj","AtObjLoc","Ambient",NULL
+	"onobj","atobjloc","ambient",NULL
 };
 const char* const SoundService::SoundNetwork[] = {
-	"Default","ByProxy","LocalOnly",NULL
+	"normal","broadcast","localonly",NULL
 };
 
 const luax::Registry WeaponService::Methods[] = {
@@ -2313,7 +2287,7 @@ int WeaponService::Equip(luax::Handle L)
 	luax::State S(L);
 	WeaponSrv.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
-	int arg2 = S.toBoolean(2);
+	eWeaponType arg2 = S.toBoolean(2) ? kWeaponBlackjack : kWeaponSword;
 	long ret = WeaponSrv->Equip(arg1,arg2);
 	S.push(ret != 0);
 	return 1;

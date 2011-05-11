@@ -1,22 +1,21 @@
 /******************************************************************************
- *    LgStructData.cpp
+ *  LgStructData.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 #define LUAX_INLINE
@@ -26,7 +25,7 @@
 using namespace Lgs;
 using namespace luax;
 
-StructData::StructData(luax::State& L, const char* D)
+StructData::StructData(State& L, const char* D)
  : m_lua(L), m_sd(g_pScriptManager)
 {
 	m_desc = m_sd->Lookup(D);
@@ -130,17 +129,10 @@ void StructData::pushField(const sFieldDesc* field, const char* data)
 		m_lua.push(elem, end-elem);
 		break;
 	}
-	/*
-	case kFieldTypePtr:
-		m_lua.push(elem, field->size);
-		break;
-	*/
 	case kFieldTypeVector:
 	{
 		const mxs_vector* v = reinterpret_cast<const mxs_vector*>(elem);
-		m_lua.getGlobal("vector")
-			.push(v->x).push(v->y).push(v->z)
-			.call(3, 1);
+		lmod_newvector(m_lua.L(), v->x, v->y, v->z);
 		break;
 	}
 	case kFieldTypeFloat:

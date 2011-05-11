@@ -28,7 +28,7 @@
 #include "lauxlib.h"
 #include "mod/modlib.h"
 
-static lvector* auxnew (lua_State* L, lua_Number x, lua_Number y, lua_Number z) {
+LUA_API lvector* lmod_newvector (lua_State *L, lua_Number x, lua_Number y, lua_Number z) {
   lvector* vec = (lvector*)lua_newuserdata(L, sizeof(lvector));
   lua_getfield(L, LUA_REGISTRYINDEX, LVECTOR_NAME);
   lua_setmetatable(L, -2);
@@ -45,7 +45,7 @@ static int lvector_new (lua_State* L) {
   x = luaL_optnumber(L, arg+1, 0.0);
   y = luaL_optnumber(L, arg+2, 0.0);
   z = luaL_optnumber(L, arg+3, 0.0);
-  auxnew(L, x, y, z);
+  lmod_newvector(L, x, y, z);
   return 1;
 }
 
@@ -86,20 +86,20 @@ static int lvector_eq (lua_State* L) {
 static int lvector_add (lua_State* L) {
   lvector* a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
   lvector* b = (lvector*)luaL_checkudata(L, 2, LVECTOR_NAME);
-  auxnew(L, a->v.x+b->v.x, a->v.y+b->v.y, a->v.z+b->v.z);
+  lmod_newvector(L, a->v.x+b->v.x, a->v.y+b->v.y, a->v.z+b->v.z);
   return 1;
 }
 
 static int lvector_sub (lua_State* L) {
   lvector* a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
   lvector* b = (lvector*)luaL_checkudata(L, 2, LVECTOR_NAME);
-  auxnew(L, a->v.x-b->v.x, a->v.y-b->v.y, a->v.z-b->v.z);
+  lmod_newvector(L, a->v.x-b->v.x, a->v.y-b->v.y, a->v.z-b->v.z);
   return 1;
 }
 
 static int lvector_unm (lua_State* L) {
   lvector* a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
-  auxnew(L, -a->v.x, -a->v.y, -a->v.z);
+  lmod_newvector(L, -a->v.x, -a->v.y, -a->v.z);
   return 1;
 }
 
@@ -116,11 +116,11 @@ static int lvector_mul (lua_State* L) {
       b = luaL_checknumber(L, 2);
     else {
       lvector* c = (lvector*)luaL_checkudata(L, 2, LVECTOR_NAME);
-      auxnew(L, a->v.x*c->v.x, a->v.y*c->v.y, a->v.z*c->v.z);
+      lmod_newvector(L, a->v.x*c->v.x, a->v.y*c->v.y, a->v.z*c->v.z);
       return 1;
     }
   }
-  auxnew(L, a->v.x*b, a->v.y*b, a->v.z*b);
+  lmod_newvector(L, a->v.x*b, a->v.y*b, a->v.z*b);
   return 1;
 }
 
@@ -160,10 +160,10 @@ static int lvector_norm (lua_State* L) {
     l = a->v.x / m; i = (fabs(l) < e) ? 0.0 : l;
     l = a->v.y / m; j = (fabs(l) < e) ? 0.0 : l;
     l = a->v.z / m; k = (fabs(l) < e) ? 0.0 : l;
-    auxnew(L, i, j, k);
+    lmod_newvector(L, i, j, k);
   }
   else
-    auxnew(L, 0, 0, 0);
+    lmod_newvector(L, 0, 0, 0);
   return 1;
 }
 
@@ -178,9 +178,9 @@ static int lvector_dot (lua_State* L) {
 static int lvector_cross (lua_State* L) {
   lvector* a = (lvector*)luaL_checkudata(L, 1, LVECTOR_NAME);
   lvector* b = (lvector*)luaL_checkudata(L, 2, LVECTOR_NAME);
-  auxnew(L, a->v.y*b->v.z - a->v.z*b->v.y,
-            a->v.z*b->v.x - a->v.x*b->v.z,
-            a->v.x*b->v.y - a->v.y*b->v.x);
+  lmod_newvector(L, a->v.y*b->v.z - a->v.z*b->v.y,
+                    a->v.z*b->v.x - a->v.x*b->v.z,
+                    a->v.x*b->v.y - a->v.y*b->v.x);
   return 1;
 }
 

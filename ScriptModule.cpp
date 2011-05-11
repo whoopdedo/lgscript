@@ -1,22 +1,21 @@
 /******************************************************************************
- *    ScriptModule.cpp
+ *  ScriptModule.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 
@@ -24,19 +23,33 @@
 
 #include <exception>
 #include <cstring>
+#include <cstdarg>
+#include <cstdio>
 #include <io.h>
 
-#include <lg/iids.h>
-#include <lg/scrmanagers.h>
 #include <lg/malloc.h>
+#include <lg/editor.h>
 
-using namespace std;
+class cScrClassDesc : public sScrClassDesc
+{
+public:
+	cScrClassDesc(const char* cl, const char* mod, const char* base, ScriptFactoryProc proc)
+	{
+		pszClass = cl;
+		pszModule = mod;
+		pszBaseClass = base;
+		pfnFactory = proc;
+	}
+};
+
 
 static int __cdecl NullPrintf(const char*, ...);
 
 IMalloc* g_pMalloc = NULL;
 IScriptMan* g_pScriptManager = NULL;
 volatile MPrintfProc g_pfnMPrintf = NullPrintf;
+
+const char ScriptModule::s_ScriptModuleName[] = "lgs";
 
 static int __cdecl NullPrintf(const char*, ...)
 {
@@ -45,9 +58,9 @@ static int __cdecl NullPrintf(const char*, ...)
 
 int ScriptModule::MPrintf(const char* pszFormat, ...)
 {
-	// Waste cycles and stack space so we don't blow-out Dromed's buffer
+	// No need to be concerned about threads or reentrancy or blowing the stack.
+	static char psz[1000];
 	va_list va;
-	char psz[1000];
 	va_start(va, pszFormat);
 	_vsnprintf(psz, 1000, pszFormat, va);
 	va_end(va);
@@ -60,77 +73,47 @@ ScriptModule::~ScriptModule()
 	const sScrClassDesc* p = m_ScriptsArray.begin();
 	for (; p != m_ScriptsArray.end(); ++p)
 		delete[] p->pszClass;
-	delete[] m_pszName;
+	if (m_pszName != s_ScriptModuleName)
+		delete[] m_pszName;
 }
 
 ScriptModule::ScriptModule()
-	    : m_iRef(1), m_pszName(NULL),
-	      m_pScriptInterpreter(NULL)
+	    : m_pScriptInterpreter(NULL)
 {
+	m_pszName = const_cast<char*>(s_ScriptModuleName);
 }
 
-/*
-ScriptModule::ScriptModule(const char* pszName)
-	    : m_iRef(1), m_pszName(NULL),
-	      m_pScriptInterpreter(NULL)
+void ScriptModule::DisposeRef(void)
 {
-	Init(pszName);
-}
-*/
-
-HRESULT __stdcall ScriptModule::QueryInterface(REFIID riid, void** ppout)
-{
-	if (riid == IID_IUnknown)
-		*ppout = static_cast<IUnknown*>(this);
-	else if (riid == IID_IScriptModule)
-		*ppout = static_cast<IScriptModule*>(this);
-	else
-		return E_NOINTERFACE;
-	reinterpret_cast<IUnknown*>(*ppout)->AddRef();
-	return S_OK;
-}
-
-ULONG __stdcall ScriptModule::AddRef(void)
-{
-	return ++m_iRef;
-}
-
-ULONG __stdcall ScriptModule::Release(void)
-{
-	// This object is static, so we don't delete it.
-	int iRefCnt = --m_iRef;
-	if (iRefCnt < 0)
-	{
-		iRefCnt = m_iRef = 0;
-		delete m_pScriptInterpreter;
-		m_pScriptInterpreter = NULL;
-		const sScrClassDesc* p = m_ScriptsArray.begin();
-		for (; p != m_ScriptsArray.end(); ++p)
-			delete[] p->pszClass;
-		m_ScriptsArray.clear();
+	delete m_pScriptInterpreter;
+	m_pScriptInterpreter = NULL;
+	const sScrClassDesc* p = m_ScriptsArray.begin();
+	for (; p != m_ScriptsArray.end(); ++p)
+		delete[] p->pszClass;
+	m_ScriptsArray.clear();
+	if (m_pszName != s_ScriptModuleName)
 		delete[] m_pszName;
-		m_pszName = NULL;
-	}
-	return iRefCnt;
+	m_pszName = const_cast<char*>(s_ScriptModuleName);
+	cInterfaceImp<IScriptModule,IID_Def<IScriptModule>,kInterfaceImpStatic>::DisposeRef();
 }
 
 bool ScriptModule::Init(const char* pszName, bool bEditor)
 {
 	try
 	{
-	if (m_pszName)
+	if (m_pszName != s_ScriptModuleName)
 		delete[] m_pszName;
 	if (pszName)
 	{
-		m_pszName = new char[::strlen(pszName)+1];
+		m_pszName = new char[strlen(pszName)+1];
 		strcpy(m_pszName, pszName);
 	}
 	else
-		m_pszName = NULL;
+		m_pszName = const_cast<char*>(s_ScriptModuleName);
 
 	m_pScriptInterpreter = new Lgs::ScriptInterpreter(bEditor);
 	}
-	catch (exception& err)
+	catch (std::exception& err)
 	{
 		MPrintf("!!! Exception during initialization: %s\n", err.what());
 		return false;
@@ -161,7 +144,7 @@ const sScrClassDesc* __stdcall ScriptModule::GetFirstClass(tScrIter* pIterParam)
 		*reinterpret_cast<unsigned int*>(pIterParam) = 0;
 		pRet = &m_ScriptsArray[0];
 	}
-	catch (exception& err)
+	catch (std::exception& err)
 	{
 		MPrintf("!!! Exception while enumerating scripts: %s\n", err.what());
 		return NULL;
@@ -184,7 +167,7 @@ const sScrClassDesc* __stdcall ScriptModule::GetNextClass(tScrIter* pIterParam)
 			pRet = &m_ScriptsArray[index];
 		*reinterpret_cast<unsigned int*>(pIterParam) = index;
 	}
-	catch (exception& err)
+	catch (std::exception& err)
 	{
 		MPrintf("!!! Exception while enumerating scripts: %s\n", err.what());
 		return NULL;
@@ -194,7 +177,6 @@ const sScrClassDesc* __stdcall ScriptModule::GetNextClass(tScrIter* pIterParam)
 		MPrintf("!!! Unhandled exception in ScriptModule::GetNextClass\n");
 		return NULL;
 	}
-
 	return pRet;
 }
 
@@ -211,12 +193,11 @@ unsigned long ScriptModule::BuildScripts(void)
 		delete[] p->pszClass;
 	m_ScriptsArray.clear();
 
-	sScrClassDesc scrdesc;
-	scrdesc.pszModule = m_pszName;
-	scrdesc.pszBaseClass = "LgScript";
-	scrdesc.pfnFactory = reinterpret_cast<ScriptFactoryProc>(&ScriptFactory);
+	char* pszModule = m_pszName;
+	const char* pszBaseClass = "LgScript";
+	ScriptFactoryProc pfnFactory = &ScriptFactory;
 	_finddata_t ffdata;
-	char ffpath[MAX_PATH];
+	char ffpath[FILENAME_MAX];
 	strcpy(ffpath, ".\\scripts\\");
 	strcat(ffpath, "*");
 	int hFFile = _findfirst(ffpath, &ffdata);
@@ -226,42 +207,25 @@ unsigned long ScriptModule::BuildScripts(void)
 		{
 		do
 		{
-			if (ffdata.name[0] == '_' ||
-			    (ffdata.attrib & (_A_HIDDEN|_A_SYSTEM)) != 0)
-				continue;
-			if ((ffdata.attrib & _A_SUBDIR) == 0)
+			if (ffdata.name[0] != '_' &&
+			    (ffdata.attrib & (_A_HIDDEN|_A_SYSTEM|_A_SUBDIR)) == 0)
 			{
 				char* fileext = strrchr(ffdata.name, '.');
 				size_t namelen = fileext - ffdata.name;
 				if ((_stricmp(fileext, ".luac") == 0 ||
-				     _stricmp(fileext, ".lua") == 0) &&
-				    _strnicmp(ffdata.name, "init", namelen) != 0)
+					 _stricmp(fileext, ".lua") == 0) &&
+					_strnicmp(ffdata.name, "init", namelen) != 0)
 				{
-					scrdesc.pszClass = new char[namelen+1];
-					memcpy(scrdesc.pszClass, ffdata.name, namelen);
-					scrdesc.pszClass[namelen] = '\0';
-					m_ScriptsArray.append(scrdesc);
+					char* pszClass = new char[namelen+1];
+					memcpy(pszClass, ffdata.name, namelen);
+					pszClass[namelen] = '\0';
+					m_ScriptsArray.append(cScrClassDesc(pszModule,pszClass,pszBaseClass,pfnFactory));
 				}
 			}
-#if 0
-			else
-			{
-				strncpy(ffpath, ".\\script\\", MAX_PATH);
-				strncat(ffpath, ffdata.name, MAX_PATH);
-				strncat(ffpath, "\\init.lua", MAX_PATH);
-				if (_access(ffpath, F_OK) == 0)
-				{
-					size_t namelen = strlen(ffdata.name) + 1;
-					scrdesc.pszClass = new char[namelen];
-					memcpy(scrdesc.pszClass, ffdata.name, namelen);
-					m_ScriptsArray.append(scrdesc);
-				}
-			}
-#endif
 		}
 		while (_findnext(hFFile, &ffdata) != -1);
 		}
-		catch (exception& err)
+		catch (std::exception& err)
 		{
 			MPrintf("!!! Exception while enumerating scripts: %s\n", err.what());
 		}
@@ -285,7 +249,7 @@ IScript* __cdecl ScriptModule::ScriptFactory(const char* pszName, int iObjId)
 		pScript = g_ScriptModule.m_pScriptInterpreter->
 				LoadScript(pszName, iObjId);
 	}
-	catch (exception& err)
+	catch (std::exception& err)
 	{
 		MPrintf("!!! Cannot create script [%s:%d]: %s\n",
 			pszName, iObjId, err.what());
@@ -301,7 +265,7 @@ IScript* __cdecl ScriptModule::ScriptFactory(const char* pszName, int iObjId)
 }
 
 extern "C"
-int __declspec(dllexport) __stdcall
+Bool __declspec(dllexport) __stdcall
 ScriptModuleInit (const char* pszName,
                   IScriptMan* pScriptMan,
                   MPrintfProc pfnMPrintf,
@@ -323,36 +287,18 @@ ScriptModuleInit (const char* pszName,
 		g_pfnMPrintf = pfnMPrintf;
 
 	if (!g_pScriptManager || !g_pMalloc)
-		return 0;
+		return FALSE;
 
 	bool bEditor = false;
 	IUnknown* pIFace;
-	if (SUCCEEDED(pScriptMan->QueryInterface(IID_IEditTools, reinterpret_cast<void**>(&pIFace))))
+	if (pScriptMan->QueryInterface(IID_IEditTools, reinterpret_cast<void**>(&pIFace)) == S_OK)
 	{
 		bEditor = true;
 		pIFace->Release();
 	}
 	if (!g_ScriptModule.Init(pszName, bEditor))
-		return 0;
+		return FALSE;
 	g_ScriptModule.QueryInterface(IID_IScriptModule, reinterpret_cast<void**>(pOutInterface));
 
-	return 1;
-}
-
-extern "C"
-BOOL WINAPI
-DllMain (HINSTANCE hDLL, DWORD dwReason, PVOID lpResv)
-{
-	if (dwReason == DLL_PROCESS_ATTACH)
-	{
-		DisableThreadLibraryCalls(hDLL);
-		return TRUE;
-	}
 	return TRUE;
-#ifdef __GNUC__
-	lpResv = lpResv;
-#endif
-#ifdef __BORLANDC__
-#pragma argsused(hDLL,dwReason)
-#endif
 }

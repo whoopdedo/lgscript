@@ -1,28 +1,28 @@
 /******************************************************************************
- *    LgServices.h
+ *  LgServices.h
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 #ifndef LGSERVICES_H
 #define LGSERVICES_H
 
 #ifdef _DARKGAME
+#include <lg/config.h>
 #include <lg/objstd.h>
 #include <lg/interface.h>
 #include <lg/scrservices.h>
@@ -34,7 +34,6 @@
 #include <darkhook.h>
 #endif
 
-#define LUAX_INLINE
 #include "luax.h"
 
 namespace Lgs
@@ -53,7 +52,7 @@ protected:
 	//static SService<IDamageSrv> DamageSrv;
 	static SService<IDarkGameSrv> DarkGameSrv;
 	static SService<IDarkUISrv> DarkUISrv;
-	//static SService<IDataSrv> DataSrv;
+	static SService<IDataSrv> DataSrv;
 	static SService<IDebugScrSrv> DebugSrv;
 	static SService<IDoorSrv> DoorSrv;
 	static SService<IDarkInvSrv> DarkInvSrv;
@@ -86,7 +85,6 @@ protected:
 	static SInterface<ITraitManager> TraitMan;
 	static SInterface<IContainSys> ContainSys;
 	static SInterface<IDamageModel> DamageSys;
-	static SInterface<IGameStrings> GameStringSys;
 	static SInterface<IKeySys> KeySys;
 	static SInterface<IQuestData> QuestData;
 	static SInterface<IReactions> ARReactions;
@@ -961,7 +959,7 @@ protected:
 	 * @param integer mode
 	 */
 	static int GetModeName(luax::Handle);
-	static const char* const LightService::LightMode[];
+	static const char* const LightMode[];
 public:
 	static const luax::Registry Methods[];
 };
@@ -994,7 +992,7 @@ protected:
 	 *
 	 * @return boolean exists
 	 * @param string|integer flavor
-	 * @param integer source
+	 * @param integer source (optional)
 	 * @param integer destination (optional)
 	 */
 	static int AnyExist(luax::Handle);
@@ -1003,7 +1001,7 @@ protected:
 	 *
 	 * @return linkset iterator
 	 * @param string|integer flavor
-	 * @param integer source
+	 * @param integer source (optional)
 	 * @param integer destination (optional)
 	 */
 	static int GetAll(luax::Handle);
@@ -1012,7 +1010,7 @@ protected:
 	 *
 	 * @return integer|nil link
 	 * @param string|integer flavor
-	 * @param integer source
+	 * @param integer source (optional)
 	 * @param integer destination (optional)
 	 */
 	static int GetOne(luax::Handle);
@@ -1048,7 +1046,7 @@ protected:
 	 */
 	static int DestroyMany(luax::Handle);
 	/**
-	 * Get an iterator for links between objects and the objects that descend from them.
+	 * Get an iterator for links from an object or its parents to another object or its parents.
 	 *
 	 * @return linkset iterator
 	 * @param string|integer flavor
@@ -1057,13 +1055,12 @@ protected:
 	 */
 	static int GetAllInherited(luax::Handle);
 	/**
-	 * Get an iterator for links between objects and the objects that descend from them.
-	 * (How is this different from the other function?)
+	 * Get an iterator for links from an object or its parents to a particular or unknown object.
 	 *
 	 * @return linkset iterator
 	 * @param string|integer flavor
 	 * @param integer source
-	 * @param integer destination
+	 * @param integer destination (optional)
 	 */
 	static int GetAllInheritedSingle(luax::Handle);
 /**
@@ -1145,10 +1142,10 @@ protected:
 	 */
 	static int Broadcast(luax::Handle);
 	/**
-	 * Send a message using a proxy.
+	 * Send a message to a specific host.
 	 *
 	 * @return boolean success
-	 * @param integer source
+	 * @param integer host
 	 * @param integer destination
 	 * @param string message
 	 * @param any data (optional)
@@ -1187,7 +1184,7 @@ protected:
 	 *
 	 * @return integer timerid
 	 * @param integer destination
-	 * @param string message
+	 * @param string name
 	 * @param number seconds
 	 * @param any data (optional)
 	 */
@@ -1504,9 +1501,9 @@ protected:
 	 * @return integer|nil object
 	 * @param integer source
 	 * @param integer archetype
-	 * @param number velocity (optional)
+	 * @param number scale (optional)
 	 * @param string|integer options (optional)
-	 * @param vector randomize (optional)
+	 * @param vector velocity (optional)
 	 */
 	static int LaunchProjectile(luax::Handle);
 	/**
@@ -1612,7 +1609,7 @@ protected:
 	/**
 	 * Nudge the player.
 	 *
-	 * @param integer zero (optional)
+	 * @param integer submodel (optional)
 	 * @param vector offset
 	 */
 	static int PlayerMotionSetOffset(luax::Handle);
@@ -1850,7 +1847,7 @@ protected:
 	 *
 	 * @param integer object
 	 * @param string name
-	 * @param integer options (optional)
+	 * @param string|integer type (optional)
 	 */
 	static int SubscribeMsg(luax::Handle);
 	/**
@@ -1889,6 +1886,7 @@ protected:
 	 */
 	static int Delete(luax::Handle);
 //TODO: Iter
+	static const char* const QuestType[];
 public:
 	static const luax::Registry Methods[];
 };
@@ -2813,51 +2811,52 @@ class Sound2Service : protected SoundService
 protected:
 	/**
 	 * Play schema tags.
-	 * Proxy option can be "Default", "ByProxy", "LocalOnly".
+	 * Networking option can be "normal", "broadcast", "localonly".
 	 *
 	 * @return boolean success
 	 * @param integer object
 	 * @param string tags
 	 * @param vector|integer location (optional)
 	 * @param boolean loop (optional)
-	 * @param string|integer proxy (optional)
+	 * @param string|integer networking (optional)
 	 */
 	static int Play(luax::Handle);
 	/**
 	 * Play ambient schema tags.
-	 * Proxy option can be "Default", "ByProxy", "LocalOnly".
+	 * Networking option can be "normal", "broadcast", "localonly".
 	 *
 	 * @return boolean success
 	 * @param integer object
 	 * @param string tags
 	 * @param boolean loop (optional)
-	 * @param string|integer proxy (optional)
+	 * @param string|integer networking (optional)
 	 */
 	static int PlayAmbient(luax::Handle);
 	/**
 	 * Play a schema.
-	 * Proxy option can be "Default", "ByProxy", "LocalOnly".
+	 * Networking option can be "normal", "broadcast", "localonly".
 	 *
 	 * @return boolean success
 	 * @param integer object
 	 * @param integer schema
 	 * @param vector|integer location (optional)
-	 * @param string|integer proxy (optional)
+	 * @param string|integer networking (optional)
 	 */
 	static int PlaySchema(luax::Handle);
 	/**
 	 * Play an ambient schema.
-	 * Proxy option can be "Default", "ByProxy", "LocalOnly".
+	 * Networking option can be "normal", "broadcast", "localonly".
 	 *
 	 * @return boolean success
 	 * @param integer object
 	 * @param integer schema
-	 * @param string|integer proxy (optional)
+	 * @param string|integer networking (optional)
 	 */
 	static int PlaySchemaAmbient(luax::Handle);
 	/**
 	 * Play environmental schema tags.
-	 * Location can be "OnObj", "AtObjLoc", "Ambient". Proxy option can be "Default", "ByProxy", "LocalOnly".
+	 * Location can be "onobj", "atobjloc", "ambient".
+	 * Networking option can be "normal", "broadcast", "localonly".
 	 *
 	 * @return boolean success
 	 * @param integer object
@@ -2865,7 +2864,7 @@ protected:
 	 * @param integer source1 (optional)
 	 * @param integer source2 (optional)
 	 * @param string|integer location (optional)
-	 * @param string|integer proxy (optional)
+	 * @param string|integer networking (optional)
 	 */
 	static int PlayEnvSchema(luax::Handle);
 	/**
@@ -2880,18 +2879,18 @@ protected:
 	 * Stop schemas.
 	 *
 	 * @return number count
-	 * @param integer object
+	 * @param integer source
 	 * @param string schemas (optional)
-	 * @param integer source (optional)
+	 * @param integer object (optional)
 	 */
 	static int Halt(luax::Handle);
 	/**
 	 * Stop schema tags.
 	 *
 	 * @return boolean success
-	 * @param integer object
+	 * @param integer source
 	 * @param string tags (optional)
-	 * @param integer source (optional)
+	 * @param integer object (optional)
 	 */
 	static int HaltSchema(luax::Handle);
 	/**

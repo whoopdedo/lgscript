@@ -1,7 +1,7 @@
 /******************************************************************************
  *    luax.h
  *
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *    Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
  *    Permission is hereby granted, free of charge, to any person obtaining a copy
  *    of this software and associated documentation files (the "Software"), to

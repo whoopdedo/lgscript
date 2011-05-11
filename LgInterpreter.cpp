@@ -1,22 +1,21 @@
 /******************************************************************************
- *    ScriptInterpreter.cpp
+ *  ScriptInterpreter.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 #define LUAX_INLINE
@@ -65,6 +64,13 @@ int ScriptInterpreter::Print(Handle L)
 	return 0;
 }
 
+int ScriptInterpreter::NoPrint(Handle L)
+{
+	State S(L);
+	S.setTop(0);
+	return 0;
+}
+
 int ScriptInterpreter::Traceback(Handle L)
 {
 	State S(L);
@@ -74,7 +80,7 @@ int ScriptInterpreter::Traceback(Handle L)
 		pScript = S.toUserdata(Userdata<LgScript>(),Upvalue(1));
 	if (!S.isString(1))  /* 'message' not a string? */
 	{
-		err = S_pushLiteral(S,"Unknown error").getTop();
+		err = S.push("Unknown error").getTop();
 	}
 	if (!S.getGlobal("debug").isTable())
 	{
@@ -103,13 +109,15 @@ int ScriptInterpreter::Traceback(Handle L)
 int ScriptInterpreter::NoTraceback(Handle L)
 {
 	State S(L);
+#if 0
+	// Why bother? There's no monolog in the retail game.
 	int err = 1;
 	LgScript* pScript = NULL;
 	if (!S.isNoneOrNil(Upvalue(1)))
 		pScript = S.toUserdata(Userdata<LgScript>(),Upvalue(1));
 	if (!S.isString(1))  /* 'message' not a string? */
 	{
-		err = S_pushLiteral(S,"Unknown error").getTop();
+		err = S.push("Unknown error").getTop();
 	}
 	if (pScript)
 		ScriptModule::MPrintf("!!! [%s:%d] %s\n",
@@ -118,6 +126,7 @@ int ScriptInterpreter::NoTraceback(Handle L)
 	else
 		ScriptModule::MPrintf("!!! %s\n", S.asString());
 	if (err != 1)
+#endif
 		S.setTop(1);
 	return 1;
 }
@@ -131,7 +140,7 @@ ScriptInterpreter::ScriptInterpreter(bool bEditor)
 	: m_pLua(NULL), m_bEditor(bEditor)
 {
 	ScriptModule::MPrintf(
-	"=== This is LgScript 1.0 Copyright (C) 2009 Tom N Harris\n"
+	"=== This is LgScript 1.0 Copyright (C) 2011 Tom N Harris\n"
 	"=== Using " LUA_RELEASE " " LUA_COPYRIGHT "\n"
 	"=== LgScript comes with ABSOLUTELY NO WARRANTY; see the GNU General\n"
 	"=== Public License for more details.\n"
@@ -157,13 +166,10 @@ void ScriptInterpreter::Init(void)
 	m_pLua->createTable(0,0).setField(s_ScriptCache, LUA_REGISTRYINDEX);
 	// Create script instance cache
 	m_pLua->createTable(0,0).copy().setMetatable();
-	S_pushLiteral(*m_pLua, "k").setField("__mode");
+	//m_pLua->push("k").setField("__mode");
 	m_pLua->setField(s_ScriptRegistry, LUA_REGISTRYINDEX);
-	if (m_bEditor)
-	{
-		// Replace `print'
-		m_pLua->push(Print).setField("print", LUA_GLOBALSINDEX);
-	}
+	// Replace `print'
+	m_pLua->push(m_bEditor ? Print : NoPrint).setField("print", LUA_GLOBALSINDEX);
 }
 
 int ScriptInterpreter::Registry(State& S, const char* pszKey)
@@ -175,9 +181,9 @@ IScript* ScriptInterpreter::LoadScript(const char* pszName, int iObjId)
 {
 	IScript* pScript = NULL;
 	Frame S(*m_pLua);
+	S->checkStack(LUA_MINSTACK);
 	S->push(pszName);  // name
 	S->copy().push(iObjId).concat(); // name nameobjid
-	//S->getField(s_ScriptCache, LUA_REGISTRYINDEX);
 	int iCache = Cache();  // name nameobjid LGS
 	if (!S->rawGet(iCache, -2).isNil())  // name nameobjid LGS script
 	{
@@ -197,7 +203,6 @@ S->getGlobal("print").push("*** CACHE > ").copy(-5).copy(-4).call(3,0);
 			ScriptModule::MPrintf("!!! %s\n", S->asString());
 			return NULL;
 		}
-// name nameobjid LGS name0 chunk print "*** CACHE " name0 chunk
 S->getGlobal("print").push("*** CACHE < ").copy(-4).copy(-4).call(3,0);
 		S->rawSet(iCache, -2, -1);  // cache[name0] = chunk
 	}
@@ -209,12 +214,10 @@ S->getGlobal("print").push("*** CACHE < ").copy(-4).copy(-4).call(3,0);
 		// no need to delete script, GC will clean it up
 		return NULL;
 	}
-// name nameobjid LGS script screnv print "*** CACHE " nameobjid script
 S->getGlobal("print").push("*** CACHE < ").copy(-6).copy(-5).call(3,0);
 	S->rawSet(iCache, -4, -2);  // cache[nameobjid] = script
 	int iScripts = Instance();   // name nameobjid LGS script screnv Registry
 	S->push(Userdata<IScript>(pScript)); // name nameobjid LGS script screnv Registry pointer
-// ... LGS script screnv Reg pointer print "*** INSTANCE " pointer screnv
 S->getGlobal("print").push("*** INSTANCE < ").copy(-3).copy(-6).call(3,0);
 	S->copy(-3).rawSet(iScripts); // registry[pointer] = screnv
 	return pScript;
@@ -249,7 +252,7 @@ int ScriptInterpreter::Chunk(void)
 	int iLoaders = S.getGlobal("package").getFieldI("loaders");
 	if (!S.isTable(iLoaders))
 		S.error(LUA_QL("package.loaders") " must be a table");
-	S_pushLiteral(S, "");
+	S.push("");
 	for (int i=1; !S.rawGetN(i, iLoaders).isNil(); i++)
 	{
 		S.copy(iName).call(1, 1);
@@ -273,22 +276,25 @@ int ScriptInterpreter::Environment(void)
 	State S(*m_pLua);
 	int iChunk = S.getTop() - 1;
 	S.createTable(0, 2);
-	S.createTable(0, 2);  // chunk script env mt
-	S.copy(LUA_GLOBALSINDEX).setField("__index");
-	S.setMetatable();  // metatable(env) = mt
-	S.insert(-2).setField("script");  // move environment below script
-	S.copy().setFEnv(iChunk);
-	S.insert(iChunk);  // move environment below chunk
+	LgScript::Environment(S);
+	// chunk script env
+	S.push("script").copy(-3).rawSet(-3).remove(-2);
+	//S.insert(-2).setField("script");  // env['script'] = script
+	S.insert(iChunk);  // move env below chunk
+	S.copy().setFEnv(-2);  // env chunk
+	S.copy();
 	try
 	{
-		S.push(Traceback).insert(); // move traceback below chunk
+		S.push(m_bEditor ? Traceback : NoTraceback).insert(); // move traceback below chunk
 		S.pCall(0, 0, -2);
 	}
 	catch (Exception&)
 	{
+		S.copy(LUA_GLOBALSINDEX).setFEnv(iChunk+1);
 		S.setTop(iChunk-1);
 		return 1;
 	}
+	S.copy(LUA_GLOBALSINDEX).setFEnv(iChunk+1);
 	S.setTop(iChunk);  // env
 	return 0;
 }

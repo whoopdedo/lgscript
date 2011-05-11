@@ -1,35 +1,37 @@
 /******************************************************************************
- *    LgServices3.cpp
+ *  LgServices3.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
 #undef _DARKGAME
 #define _DARKGAME 3
+#define LUAX_INLINE
+#include "luax.h"
+
 #include "LgServices.h"
 #include "ScriptModule.h"
 #include "LgMultiParm.h"
 #include "utils.h"
-
-#include <cstring>
+#include "mod/modlib.h"
 
 #include <lg/scrservices.h>
-#include <lua/vec.h>
+
+#include <cstring>
 
 namespace Lgs
 {
@@ -143,8 +145,8 @@ int NetworkingService::SetProxyOneShotTimer(luax::Handle L)
 	const char * arg2 = S.checkString(2,NULL);
 	float arg3 = S.checkNumber(3);
 	ScriptMultiParm mp4(S); cMultiParm const& arg4 = mp4.pop(4);
-	int ret = NetworkingSrv->SetProxyOneShotTimer(arg1,arg2,arg3,arg4);
-	S.push(ret);
+	tScrTimer ret = NetworkingSrv->SetProxyOneShotTimer(arg1,arg2,arg3,arg4);
+	S.push(reinterpret_cast<int>(ret));
 	return 1;
 }
 int NetworkingService::FirstPlayer(luax::Handle L)
@@ -274,23 +276,25 @@ int Object3Service::FindClosestObjectNamed(luax::Handle L)
 	int arc = ObjectSys->GetObjectNamed(arg2);
 	if (arc != 0)
 	{
+		// FIXME
 		cScrVec other;
 		true_bool valid;
 		double distance = double(LONG_MAX)+1;
-		SInterface<IObjectQuery> q;
-		q = TraitMan->Query(arc,kTraitQueryChildren|kTraitQueryFull);
+		SInterface<IObjectQuery> q(TraitMan->Query(arc,kTraitQueryChildren|kTraitQueryFull));
 		for (; !q->Done(); q->Next())
 		{
 			object o = q->Object();
-			if (o < 0)
-				continue;
-			ObjectSrv->IsPositionValid(valid,o);
-			if (!valid)
-				continue;
-			ObjectSrv->Position(other,o);
-			double d = pos.Distance(other);
-			if (d < distance)
-				ret = o;
+			if (static_cast<int>(o) > 0)
+			{
+				ObjectSrv->IsPositionValid(valid,o);
+				if (valid)
+				{
+					ObjectSrv->Position(other,o);
+					double d = pos.Distance(other);
+					if (d < distance)
+						ret = o;
+				}
+			}
 		}
 	}
 	if (ret == 0)
@@ -306,7 +310,7 @@ int Object3Service::AddMetaPropertyToMany(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrStr arg2 = S.checkString(2,NULL);
 	int ret = ObjectSrv->AddMetaPropertyToMany(arg1,arg2);
-	S.push(luax::Number(ret));
+	S.push(ret);
 	return 1;
 }
 int Object3Service::RemoveMetaPropertyFromMany(luax::Handle L)
@@ -316,7 +320,7 @@ int Object3Service::RemoveMetaPropertyFromMany(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrStr arg2 = S.checkString(2,NULL);
 	int ret = ObjectSrv->RemoveMetaPropertyFromMany(arg1,arg2);
-	S.push(luax::Number(ret));
+	S.push(ret);
 	return 1;
 }
 int Object3Service::RenderedThisFrame(luax::Handle L)
@@ -619,7 +623,7 @@ int ShockGameService::SetPlayerPsiPoints(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
-	int arg1 = S.checkIntOrNumber(1);
+	int arg1 = S.checkInteger(1);
 	ShockGameSrv->SetPlayerPsiPoints(arg1);
 	return 0;
 }
@@ -680,7 +684,7 @@ int ShockGameService::Replicator(luax::Handle L)
 	return 0;
 }
 const char* const ShockGameService::LogType[] = {
-	"Emails","Logs","Notes","Info","Research",NULL
+	"emails","logs","notes","info","research",NULL
 };
 int ShockGameService::SetLogTime(luax::Handle L)
 {
@@ -807,7 +811,7 @@ int ShockGameService::Keypad(luax::Handle L)
 int ShockGameService::HRM(luax::Handle L)
 {
 	static const char* const TechType[] = {
-		"Hack","Repair","Modify","Maintain","Research",NULL
+		"hack","repair","modify","maintain","research",NULL
 	};
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
@@ -831,14 +835,13 @@ int ShockGameService::PayNanites(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
-	int arg1 = S.checkIntOrNumber(1);
+	int arg1 = S.checkInteger(1);
 	long ret = ShockGameSrv->PayNanites(arg1);
 	S.push(ret == 0);
 	return 1;
 }
 const char* const ShockGameService::OverlayChangeMode[] = {
-	"off","on","toggle", // not sure about the last one
-	NULL
+	"off","on","toggle",NULL
 };
 int ShockGameService::OverlayChange(luax::Handle L)
 {
@@ -930,7 +933,7 @@ int ShockGameService::WearArmor(luax::Handle L)
 int ShockGameService::LevelTransport(luax::Handle L)
 {
 	static const char* const TransportFlags[] = {
-		"RoomObjs","NetSynch",NULL
+		"roomobjs","netsynch",NULL
 	};
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
@@ -970,7 +973,7 @@ int ShockGameService::AddText(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
-	if (S.isInteger(1))
+	if (S.isNumber(1))
 	{
 		object arg1 = S.checkInteger(1); // object
 		const char * arg2 = S.checkString(2,NULL); // property
@@ -979,12 +982,12 @@ int ShockGameService::AddText(luax::Handle L)
 		if (S.getTop() >= 4)
 		{
 			arg3 = S.optInteger(3);
-			arg4 = S.checkIntOrNumber(4);
+			arg4 = S.checkInteger(4);
 		}
 		else
 		{
 			arg3 = 0;
-			arg4 = S.checkIntOrNumber(3);
+			arg4 = S.checkInteger(3);
 		}
 		ShockGameSrv->AddTextObjProp(arg1,arg2,arg3,arg4);
 	}
@@ -996,12 +999,12 @@ int ShockGameService::AddText(luax::Handle L)
 		if (S.getTop() >= 3)
 		{
 			arg2 = S.optInteger(2);
-			arg3 = S.checkIntOrNumber(3);
+			arg3 = S.checkInteger(3);
 		}
 		else
 		{
 			arg2 = 0;
-			arg3 = S.checkIntOrNumber(2);
+			arg3 = S.checkInteger(2);
 		}
 		ShockGameSrv->AddText(arg1,arg2,arg3);
 	}
@@ -1015,16 +1018,16 @@ int ShockGameService::AddTranslatableText(luax::Handle L)
 	const char * arg2 = S.checkString(2,NULL); // resource
 	object arg3 = S.checkInteger(3); // object
 	int arg4,arg5,arg6;
-	arg4 = S.checkIntOrNumber(4);
+	arg4 = S.checkInteger(4);
 	switch (S.getTop())
 	{
 	default: // arg4 - index
-		arg5 = S.checkIntOrNumber(5); // param
-		arg6 = S.checkIntOrNumber(6); // time
+		arg5 = S.checkInteger(5); // param
+		arg6 = S.checkInteger(6); // time
 		ShockGameSrv->AddTranslatableTextIndexInt(arg1,arg2,arg3,arg4,arg5,arg6);
 		break;
 	case 5: // arg4 - parameter
-		arg5 = S.checkIntOrNumber(5); // time
+		arg5 = S.checkInteger(5); // time
 		ShockGameSrv->AddTranslatableTextIndexInt(arg1,arg2,arg3,-1,arg4,arg5);
 		break;
 	case 4: // arg4 - time
@@ -1056,7 +1059,7 @@ int ShockGameService::SetModify(luax::Handle L)
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
-	int arg2 = S.checkIntOrNumber(2);
+	int arg2 = S.checkInteger(2);
 	ShockGameSrv->SetModify(arg1,arg2);
 	return 0;
 }
@@ -1065,7 +1068,7 @@ int ShockGameService::AddExp(luax::Handle L)
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
-	int arg2 = S.checkIntOrNumber(2);
+	int arg2 = S.checkInteger(2);
 	int arg3 = S.isNone(3) ? 1 : S.toBoolean(3);
 	ShockGameSrv->AddExp(arg1,arg2,arg3);
 	return 0;
@@ -1095,7 +1098,7 @@ int ShockGameService::HealObj(luax::Handle L)
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
-	int arg2 = S.checkIntOrNumber(2);
+	int arg2 = S.checkInteger(2);
 	long ret = ShockGameSrv->HealObj(arg1,arg2);
 	S.push(ret == 0);
 	return 1;
@@ -1123,7 +1126,7 @@ int ShockGameService::GetArchetypeName(luax::Handle L)
 	object arg1 = S.checkInteger(1);
 	cScrStr ret;
 	ShockGameSrv->GetArchetypeName(ret,arg1);
-	if (ret.IsEmpty()) // XXX: does this happen?
+	if (ret.IsEmpty())
 		S.push(luax::Nil());
 	else
 		S.push(ret);
@@ -1170,8 +1173,8 @@ int ShockGameService::GetDistantSelectedObj(luax::Handle L)
 int ShockGameService::FindSpawnPoint(luax::Handle L)
 {
 	static const char* const SpawnFlags[] = {
-		"PopLimit","PlrDist","GotoLoc",
-		"SelfMarker","Raycast","Farthest",
+		"poplimit","playerdist","gotoloc",
+		"selfmarker","raycast","farthest",
 		NULL
 	};
 	luax::State S(L);
@@ -1247,8 +1250,8 @@ int ShockGameService::RandRange(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
-	int arg1 = S.checkIntOrNumber(1);
-	int arg2 = S.checkIntOrNumber(2);
+	int arg1 = S.checkInteger(1);
+	int arg2 = S.checkInteger(2);
 	int ret = ShockGameSrv->RandRange(arg1,arg2);
 	S.push(luax::Number(ret));
 	return 1;
@@ -1279,14 +1282,14 @@ int ShockGameService::PreventSwap(luax::Handle L)
 	return 0;
 }
 const char* const ShockGameService::ObjStates[] = {
-	"Normal","Broken","Destroyed","Unresearched","Locked","Hacked",NULL
+	"normal","broken","destroyed","unresearched","locked","hacked",NULL
 };
 int ShockGameService::SetObjState(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
 	object arg1 = S.checkInteger(1);
-	int arg2 = S.checkOption(2,ObjStates);
+	eShockObjState arg2 = eShockObjState(S.checkOption(2,ObjStates));
 	ShockGameSrv->SetObjState(arg1,arg2);
 	return 0;
 }
@@ -1301,7 +1304,7 @@ int ShockGameService::AddAlarm(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
-	int arg1 = S.checkIntOrNumber(1);
+	int arg1 = S.checkInteger(1);
 	ShockGameSrv->AddAlarm(arg1);
 	return 0;
 }
@@ -1365,13 +1368,13 @@ int ShockGameService::StartFadeIn(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
-	int arg1 = S.checkIntOrNumber(1);
+	int arg1 = S.checkInteger(1);
 	int arg2,arg3,arg4;
 	if (S.getTop() >= 4)
 	{
-		arg2 = S.checkIntOrNumber(2);
-		arg3 = S.checkIntOrNumber(3);
-		arg4 = S.checkIntOrNumber(4);
+		arg2 = S.checkInteger(2);
+		arg3 = S.checkInteger(3);
+		arg4 = S.checkInteger(4);
 	}
 	else if (S.isString(2))
 	{
@@ -1394,13 +1397,13 @@ int ShockGameService::StartFadeOut(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
-	int arg1 = S.checkIntOrNumber(1);
+	int arg1 = S.checkInteger(1);
 	int arg2,arg3,arg4;
 	if (S.getTop() >= 4)
 	{
-		arg2 = S.checkIntOrNumber(2);
-		arg3 = S.checkIntOrNumber(3);
-		arg4 = S.checkIntOrNumber(4);
+		arg2 = S.checkInteger(2);
+		arg3 = S.checkInteger(3);
+		arg4 = S.checkInteger(4);
 	}
 	else if (S.isString(2))
 	{
@@ -1454,7 +1457,7 @@ int ShockGameService::GetHazardResistance(luax::Handle L)
 {
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
-	int arg1 = S.checkIntOrNumber(1);
+	int arg1 = S.checkInteger(1);
 	float ret = ShockGameSrv->GetHazardResistance(arg1);
 	S.push(ret);
 	return 1;
@@ -1522,7 +1525,7 @@ int ShockGameService::TlucTextAdd(luax::Handle L)
 	ShockGameSrv.set(g_pScriptManager);
 	const char * arg1 = S.checkString(1,NULL);
 	const char * arg2 = S.checkString(2,NULL);
-	int arg3 = S.optIntOrNumber(3,-1);
+	int arg3 = S.optInteger(3,-1);
 	ShockGameSrv->TlucTextAdd(arg1,arg2,arg3);
 	return 0;
 }
@@ -1580,7 +1583,7 @@ int ShockGameService::SetQBHacked(luax::Handle L)
 	luax::State S(L);
 	ShockGameSrv.set(g_pScriptManager);
 	cScrStr arg1 = S.checkString(1,NULL);
-	int arg2 = S.checkIntOrNumber(2);
+	int arg2 = S.checkInteger(2);
 	long ret = ShockGameSrv->SetQBHacked(arg1,arg2);
 	S.push(ret == 0);
 	return 1;
@@ -1637,7 +1640,7 @@ int ShockObjService::FindScriptDonor(luax::Handle L)
 	char * str2 = reinterpret_cast<char*>(g_pMalloc->Alloc(len2 + 1));
 	memcpy(str2, arg2, len2 + 1);
 	int ret = ShockObjSrv->FindScriptDonor(arg1,str2);
-	if (ret == 0) // XXX: well?
+	if (ret == 0)
 		S.push(luax::Nil());
 	else
 		S.push(ret);

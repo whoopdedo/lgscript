@@ -1,24 +1,24 @@
 /******************************************************************************
- *    LgLinkset.cpp
+ *  LgLinkset.cpp
  *
- *    This file is part of LgScript
- *    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+ *  This file is part of LgScript
+ *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
  *
- *    This program is free software; you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation; either version 2 of the License, or
- *    (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with this program; if not, write to the Free Software
- *    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
+#define LUAX_INLINE
 #include "LgLinkset.h"
 #include "LgStructData.h"
 #include "ScriptModule.h"
@@ -62,27 +62,10 @@ void LinkSet::Init(State& S)
 	S.copy().setField("__index");
 }
 
-/*
-LinkSet::~LinkSet()
+inline LinkSet* LinkSet::Check(State& S, int arg)
 {
-	if (query)
-		query->Release();
-}
-
-LinkSet::LinkSet(linkset& l)
-
-LinkSet::LinkSet(ILinkQuery* q)
-	: link(0), source(0), dest(0), flavor(0)
-{
-	query = q;
-	if (query)
-		query->AddRef();
-}
-*/
-inline LinkSet* LinkSet::Check(luax::State& S, int arg)
-{
-	LinkSet* ls = S.checkUserdata(arg,luax::Userdata<LinkSet>());
-	if (ls->query == NULL) S.error("linkset used after Release");
+	LinkSet* ls = S.checkUserdata(arg,Userdata<LinkSet>());
+	//if (ls->query == NULL) S.error("linkset used after Release");
 	return ls;
 }
 
@@ -224,8 +207,7 @@ int LinkSet::Data(Handle L)
 	if (self->link == 0)
 		self->Refresh();
 	SInterface<ILinkManager> pLM(g_pScriptManager);
-	SInterface<IRelation> pRel;
-	pRel = pLM->GetRelation(self->flavor);
+	SInterface<IRelation> pRel(pLM->GetRelation(self->flavor));
 	if (!pRel)
 	{
 		// Should never happen
