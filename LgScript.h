@@ -74,13 +74,16 @@ protected:
 	void BeginScript(void);
 	void EndScript(void);
 
-	friend class ScriptInterpreter;
-	void* operator new(size_t, luax::State&);
-	void operator delete(void*);
-
 	static void Init(luax::State&);
 	static LgScript* Check(luax::State&,int);
 	static void Environment(luax::State&);
+
+	friend class ScriptInterpreter;
+	void* operator new(size_t, luax::State&);
+	void operator delete(void*, luax::State&);
+	void operator delete(void*);
+private:
+	void* operator new(size_t);
 
 public:
 	static const char s_ClassName[];

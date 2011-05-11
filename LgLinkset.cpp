@@ -36,6 +36,11 @@ void* LinkSet::operator new(size_t s, State& L)
 	return p;
 }
 
+void LinkSet::operator delete(void*, State&)
+{
+	// allow GC
+}
+
 void LinkSet::operator delete(void*)
 {
 	// allow GC

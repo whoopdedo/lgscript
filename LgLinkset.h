@@ -68,9 +68,6 @@ public:
 	};
 	static void Init(luax::State& S);
 
-	void* operator new(size_t, luax::State&);
-	void operator delete(void*);
-
 	static const char s_ClassName[];
 
 	static int Release(luax::Handle L);
@@ -79,6 +76,13 @@ public:
 	static int Id(luax::Handle L);
 	static int Link(luax::Handle L);
 	static int Data(luax::Handle L);
+
+private:
+	void* operator new(size_t);
+public:
+	void* operator new(size_t, luax::State&);
+	void operator delete(void*, luax::State&);
+	void operator delete(void*);
 };
 
 }

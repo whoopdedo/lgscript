@@ -37,6 +37,11 @@ void* LgScript::operator new(size_t s, State& L)
 	return L.newUserdata(s);
 }
 
+void LgScript::operator delete(void*, State&)
+{
+	// allow GC
+}
+
 void LgScript::operator delete(void*)
 {
 	// allow GC
