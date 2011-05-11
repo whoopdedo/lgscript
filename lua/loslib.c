@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/time.h>
 
 #define loslib_c
 #define LUA_LIB
@@ -19,6 +18,9 @@
 
 #include "lauxlib.h"
 #include "lualib.h"
+#ifdef LUA_USE_GETTIMEOFDAY
+#include <sys/time.h>
+#endif
 #ifdef LUA_USE_FTIME
 #include <sys/timeb.h>
 #endif
