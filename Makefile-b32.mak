@@ -1,22 +1,21 @@
 ###############################################################################
-##    Makefile-b32
+##  Makefile-b32
 ##
-##    This file is part of LgScript
-##    Copyright (C) 2009 Tom N Harris <telliamed@whoopdedo.org>
+##  This file is part of LgScript
+##  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
 ##
-##    This program is free software; you can redistribute it and/or modify
-##    it under the terms of the GNU General Public License as published by
-##    the Free Software Foundation; either version 2 of the License, or
-##    (at your option) any later version.
+##  This program is free software; you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as published by
+##  the Free Software Foundation; either version 2 of the License, or
+##  (at your option) any later version.
 ##
-##    This program is distributed in the hope that it will be useful,
-##    but WITHOUT ANY WARRANTY; without even the implied warranty of
-##    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##    GNU General Public License for more details.
+##  This program is distributed in the hope that it will be useful,
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
 ##
-##    You should have received a copy of the GNU General Public License
-##    along with this program; if not, write to the Free Software
-##    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+##  You should have received a copy of the GNU General Public License
+##  along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##
 ###############################################################################
 
@@ -35,19 +34,101 @@ BRC32 = $(BCCROOT)\bin\Brc32
 TASM32 = $(BCCROOT)\bin\Tasm32
 CC = $(BCCROOT)\bin\BCC32
 
-GAME = 2
-
 srcdir = .
-bindir = .\commonobj
-bin1dir = .\t1obj
-bin2dir = .\t2obj
-bin3dir = .\ss2obj
-bindirectories = $(bindir) $(bin1dir) $(bin2dir) $(bin3dir)
+bindir = .\bin
 
 LGDIR = ..\lg
 SCRLIBDIR = ..\ScriptLib
 DH2DIR = ..\DH2
 DH2LIB = dh2.lib
+
+LUADIR = .\lua
+LUAMOD = .\mod
+LUAFLAGS = -q -P -tWD -tWM
+LUADEF = -DLUA_WIN -DLUA_ANSI -DLGSCRIPT
+LUADEF2 = -DLUA_WIN -DLUA_ANSI -DLGSCRIPT -DLUA_NOTERM
+LUADEBUG =
+LUAINC = -I$(srcdir) -I$(LUADIR)
+LUA_SRCS = $(LUADIR)\lapi.c $(LUADIR)\lapi.h \
+	$(LUADIR)\lcode.c $(LUADIR)\lcode.h \
+	$(LUADIR)\ldebug.c $(LUADIR)\ldebug.h \
+	$(LUADIR)\ldo.c $(LUADIR)\ldo.h \
+	$(LUADIR)\ldump.c \
+	$(LUADIR)\lfunc.c $(LUADIR)\lfunc.h \
+	$(LUADIR)\lgc.c $(LUADIR)\lgc.h \
+	$(LUADIR)\llex.c $(LUADIR)\llex.h \
+	$(LUADIR)\lmem.c $(LUADIR)\lmem.h \
+	$(LUADIR)\lobject.c $(LUADIR)\lobject.h \
+	$(LUADIR)\lopcodes.c $(LUADIR)\lopcodes.h \
+	$(LUADIR)\lparser.c $(LUADIR)\lparser.h \
+	$(LUADIR)\lstate.c $(LUADIR)\lstate.h \
+	$(LUADIR)\lstring.c $(LUADIR)\lstring.h \
+	$(LUADIR)\ltable.c $(LUADIR)\ltable.h \
+	$(LUADIR)\ltm.c $(LUADIR)\ltm.h \
+	$(LUADIR)\lundump.c $(LUADIR)\lundump.h \
+	$(LUADIR)\lvm.c $(LUADIR)\lvm.h \
+	$(LUADIR)\lzio.c $(LUADIR)\lzio.h \
+	$(LUADIR)\lmathlib.c \
+	$(LUADIR)\ltablib.c \
+	$(LUADIR)\lstrlib.c \
+	$(LUADIR)\loadlib.c \
+	$(LUADIR)\lauxlib.c $(LUADIR)\lauxlib.h \
+	$(LUADIR)\lbaselib.c \
+	$(LUADIR)\ldblib.c \
+	$(LUADIR)\liolib.c \
+	$(LUADIR)\loslib.c \
+	$(LUADIR)\llimits.h \
+	$(LUADIR)\lualib.h \
+	$(LUADIR)\luaconf.h \
+	$(LUADIR)\lua.h \
+	$(LUAMOD)\vec.c \
+	$(LUAMOD)\final.c \
+	$(LUAMOD)\llist.c \
+	$(LUAMOD)\lext.c \
+	$(LUAMOD)\modlib.c \
+	$(LUAMOD)\modlib.h
+LUA_OBJS = $(bindir)\lapi.obj \
+	$(bindir)\lcode.obj \
+	$(bindir)\ldebug.obj \
+	$(bindir)\ldo.obj \
+	$(bindir)\ldump.obj \
+	$(bindir)\lfunc.obj \
+	$(bindir)\lgc.obj \
+	$(bindir)\llex.obj \
+	$(bindir)\lmem.obj \
+	$(bindir)\lobject.obj \
+	$(bindir)\lopcodes.obj \
+	$(bindir)\lparser.obj \
+	$(bindir)\lstate.obj \
+	$(bindir)\lstring.obj \
+	$(bindir)\ltable.obj \
+	$(bindir)\ltm.obj \
+	$(bindir)\lundump.obj \
+	$(bindir)\lvm.obj \
+	$(bindir)\lzio.obj \
+	$(bindir)\lmathlib.obj \
+	$(bindir)\ltablib.obj \
+	$(bindir)\lstrlib.obj \
+	$(bindir)\loadlib.obj \
+	$(bindir)\vec.obj \
+	$(bindir)\final.obj \
+	$(bindir)\lext.obj
+LUA_OBJ1 = \
+	$(bindir)\lauxlib1.obj \
+	$(bindir)\lbaselib1.obj \
+	$(bindir)\ldblib1.obj \
+	$(bindir)\modlib1.obj
+LUA_OBJ2 = \
+	$(bindir)\liolib.obj \
+	$(bindir)\loslib.obj \
+	$(bindir)\lauxlib2.obj \
+	$(bindir)\lbaselib2.obj \
+	$(bindir)\ldblib2.obj \
+	$(bindir)\modlib2.obj
+LUAX = $(srcdir)\luax.h $(srcdir)\luax.hpp
+LUAX_SRCS = $(srcdir)\luax.cpp $(srcdir)\luax.h $(srcdir)\luax.hpp
+LUAX_OBJ = $(bindir)\luax.obj
+LUAX_OBJ2 = $(bindir)\luax2.obj
 
 DEFINES = -DWINVER=0x0400 -D_WIN32_WINNT=0x0400 -DWIN32_LEAN_AND_MEAN
 GAME1 = -D_DARKGAME=1
@@ -62,6 +143,7 @@ LGLIB = lg-d.lib
 SCR1LIB = ScriptLib1-d.lib
 SCR2LIB = ScriptLib2-d.lib
 SCR3LIB = ScriptLib3-d.lib
+LUADEBUG = -DLUA_USE_APICHECK -DLUA_DEBUG
 !else
 DEFINES = $(DEFINES) -DNDEBUG
 CXXDEBUG = -O2 -5 -OS -v-
@@ -72,130 +154,264 @@ SCR2LIB = ScriptLib2.lib
 SCR3LIB = ScriptLib3.lib
 !endif
 
-LDFLAGS = -q -aa -Tpd -c -b:0x10000000
+LDFLAGS = -q -aa -Tpd
 LIBDIRS = -L.;$(LGDIR);$(SCRLIBDIR);$(DH2DIR);$(BCCROOT)\lib;$(BCCROOT)\lib\psdk
 LIBS = $(DH2LIB) $(LGLIB) uuid.lib
-INCLUDES = -I. -I$(srcdir) -I$(LGDIR) -I$(SCRLIBDIR) -I$(DH2DIR)
-CXXFLAGS =  -q -P -tWD -tWM -w-par -w-inl
+INCLUDES = -I$(srcdir) -I$(LUAINC) -I$(LGDIR) -I$(SCRLIBDIR) -I$(DH2DIR)
+CXXFLAGS = -q -P -tWD -tWM -w-par -w-inl
 RCFLAGS = -r
 
-BCC32STARTUP = c0d32.obj
+BCC32DLL = c0d32.obj
+BCC32EXE = c0x32.obj
 BCC32RTLIB = cw32mt.lib
 BCCJUNK = *.il* *.csm *.tds *.map
 
-OSM_OBJS = $(bindir)\ScriptModule.obj $(bindir)\Script.obj
-BASE_OBJS = $(bindir)\MsgHandlerArray.obj
-BASE1_OBJS = $(bin1dir)\BaseTrap.obj $(bin1dir)\BaseScript.obj $(bin1dir)\CommonScripts.obj
-BASE2_OBJS = $(bin2dir)\BaseTrap.obj $(bin2dir)\BaseScript.obj $(bin2dir)\CommonScripts.obj
-BASE3_OBJS = $(bin3dir)\BaseTrap.obj $(bin3dir)\BaseScript.obj $(bin3dir)\CommonScripts.obj
-SCR1_OBJS = $(bin1dir)\PublicScripts.obj $(bin1dir)\T1Scripts.obj
-SCR2_OBJS = $(bin2dir)\PublicScripts.obj $(bin2dir)\T2Scripts.obj
-SCR3_OBJS = $(bin3dir)\PublicScripts.obj $(bin3dir)\SS2Scripts.obj
-MISC1_OBJS = $(bin1dir)\ScriptDef.obj $(bin1dir)\utils.obj
-MISC2_OBJS = $(bin2dir)\ScriptDef.obj $(bin2dir)\utils.obj
-MISC3_OBJS = $(bin3dir)\ScriptDef.obj $(bin3dir)\utils.obj
-RES1_OBJS = $(bin1dir)\script.res
-RES2_OBJS = $(bin2dir)\script.res
-RES3_OBJS = $(bin3dir)\script.res
-
-ALL1_OBJS = $(SCR1_OBJS) $(BASE1_OBJS) $(BASE_OBJS) $(OSM_OBJS) $(MISC1_OBJS)
-ALL2_OBJS = $(SCR2_OBJS) $(BASE2_OBJS) $(BASE_OBJS) $(OSM_OBJS) $(MISC2_OBJS)
-ALL3_OBJS = $(SCR3_OBJS) $(BASE3_OBJS) $(BASE_OBJS) $(OSM_OBJS) $(MISC3_OBJS)
+LGS_SRCS = \
+	$(srcdir)\LgScript.cpp $(srcdir)\LgScript.h \
+	$(srcdir)\LgInterpreter.cpp $(srcdir)\LgInterpreter.h \
+	$(srcdir)\LgMessage.cpp $(srcdir)\LgMessage.h \
+	$(srcdir)\LgMultiParm.cpp $(srcdir)\LgMultiParm.h \
+	$(srcdir)\LgStructData.cpp $(srcdir)\LgStructData.h \
+	$(srcdir)\LgLinkset.cpp $(srcdir)\LgLinkset.h \
+	$(srcdir)\LgServices.cpp $(srcdir)\LgServices.h \
+	$(srcdir)\LgServices1.cpp \
+	$(srcdir)\LgServices2.cpp \
+	$(srcdir)\LgServices3.cpp \
+	$(srcdir)\strtocolor.cpp $(srcdir)\utils.h \
+	$(srcdir)\version.rc
+OSM_SRCS = $(srcdir)\ScriptModule.cpp $(srcdir)\ScriptModule.h \
+	$(srcdir)\Script.cpp $(srcdir)\Script.h $(srcdir)\Dll.cpp \
+	$(srcdir)\script.rc
+SHELL_SRCS = $(srcdir)\LgShell.cpp \
+	$(srcdir)\shell.rc
+LGS_OBJS = \
+	$(bindir)\LgScript.obj \
+	$(bindir)\LgInterpreter.obj \
+	$(bindir)\LgMessage.obj \
+	$(bindir)\LgMultiParm.obj \
+	$(bindir)\LgStructData.obj \
+	$(bindir)\LgLinkset.obj \
+	$(bindir)\LgServices.obj \
+	$(bindir)\LgServices1.obj \
+	$(bindir)\LgServices2.obj \
+	$(bindir)\LgServices3.obj \
+	$(bindir)\strtocolor.obj
+OSM_OBJS = $(bindir)\ScriptModule.obj $(bindir)\Script.obj $(bindir)\Dll.obj
+SCRIPT_RES = $(bindir)\script.res
+SHELL_OBJS = $(bindir)\LgShell.obj
+SHELL_RES = $(bindir)\shell.res
 
 {$(srcdir)}.cpp{$(bindir)}.obj:
-	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(DEFINES) $(GAME2) $(INCLUDES) -n$(bindir) -c $<
+	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME2) $(INCLUDES) -n$(bindir) -c $<
 
-{$(srcdir)}.cpp{$(bin1dir)}.obj:
-	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(DEFINES) $(GAME1) $(INCLUDES) -n$(bin1dir) -c $<
+{$(LUADIR)}.c{$(bindir)}.obj:
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) $(DEFINES) -n$(bindir) -c $<
 
-{$(srcdir)}.cpp{$(bin2dir)}.obj:
-	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(DEFINES) $(GAME2) $(INCLUDES) -n$(bin2dir) -c $<
-
-{$(srcdir)}.cpp{$(bin3dir)}.obj:
-	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(DEFINES) $(GAME3) $(INCLUDES) -n$(bin3dir) -c $<
+{$(LUAMOD)}.c{$(bindir)}.obj:
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) $(DEFINES) -n$(bindir) -c $<
 
 {$(srcdir)}.rc{$(bindir)}.res:
 	$(BRC32) -I.;$(BCCROOT)\Include $(DEFINES) -r $<
-
-{$(srcdir)}.rc{$(bin1dir)}.res:
-	$(BRC32) -I.;$(BCCROOT)\Include $(DEFINES) $(GAME1) -fo$@ -r $<
-
-{$(srcdir)}.rc{$(bin2dir)}.res:
-	$(BRC32) -I.;$(BCCROOT)\Include $(DEFINES) $(GAME2) -fo$@ -r $<
-
-{$(srcdir)}.rc{$(bin3dir)}.res:
-	$(BRC32) -I.;$(BCCROOT)\Include $(DEFINES) $(GAME3) -fo$@ -r $<
 
 .rc.res:
 	$(BRC32) -I.;$(BCCROOT)\Include $(DEFINES) -r $<
 
 .cpp.obj:
-	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(DEFINES) $(GAME2) $(INCLUDES) -c $<
+	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME2) $(INCLUDES) -c $<
 
-.obj.osm:
-	$(ILINK32) $(LDFLAGS) $(LIBDIRS) $(BCC32STARTUP) $(OSM_OBJS) $<, $@ ,,import32.lib $(SCR2LIB) $(LIBS) $(BCC32RTLIB) , script-b32.def ,
 
-all: $(bindirectories) script-t1.osm script-t2.osm script-ss2.osm version.osm
+all: $(bindir) lgs.osm lgscript.exe
 
 clean:
 	del /y /q $(bindir)\*.*
-	del /y /q $(bin1dir)\*.*
-	del /y /q $(bin2dir)\*.*
-	del /y /q $(bin3dir)\*.*
 
 $(bindir):
 	mkdir $@
-$(bin1dir):
-	mkdir $@
-$(bin2dir):
-	mkdir $@
-$(bin3dir):
-	mkdir $@
 
-$(bindir)\ScriptModule.obj: ScriptModule.cpp ScriptModule.h
-$(bindir)\Script.obj: Script.cpp Script.h
+lgs.osm: $(LGS_OBJS) $(OSM_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ1) $(SCRIPT_RES)
+	$(ILINK32) $(LDFLAGS) -b:0x11400000 $(LIBDIRS) $(BCC32DLL) \
+	$(LGS_OBJS) $(OSM_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ1), $@ ,, \
+	import32.lib $(LIBS) $(BCC32RTLIB) , script.def , $(SCRIPT_RES)
 
-$(bin1dir)\BaseScript.obj: BaseScript.cpp BaseScript.h Script.h ScriptModule.h MsgHandlerArray.h
-$(bin2dir)\BaseScript.obj: BaseScript.cpp BaseScript.h Script.h ScriptModule.h MsgHandlerArray.h
-$(bin3dir)\BaseScript.obj: BaseScript.cpp BaseScript.h Script.h ScriptModule.h MsgHandlerArray.h
-$(bin1dir)\BaseTrap.obj: BaseTrap.cpp BaseTrap.h BaseScript.h Script.h
-$(bin2dir)\BaseTrap.obj: BaseTrap.cpp BaseTrap.h BaseScript.h Script.h
-$(bin3dir)\BaseTrap.obj: BaseTrap.cpp BaseTrap.h BaseScript.h Script.h
+lgscript.exe: $(SHELL_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ2) $(SHELL_RES)
+	$(ILINK32) $(LDFLAGS) $(LIBDIRS) $(BCC32EXE) \
+	$(SHELL_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ2), $@ ,, \
+	import32.lib $(LIBS) $(BCC32RTLIB) ,, $(SHELL_RES)
 
-$(bin1dir)\CommonScripts.obj: CommonScripts.cpp CommonScripts.h
-$(bin2dir)\CommonScripts.obj: CommonScripts.cpp CommonScripts.h
-$(bin3dir)\CommonScripts.obj: CommonScripts.cpp CommonScripts.h
+$(bindir)\LgShell.obj: $(srcdir)\LgShell.cpp
+	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) $(DEFINES) -fo$(bindir)\LgShell.obj -c $(srcdir)\LgShell.cpp
 
-$(bin1dir)\PublicScripts.obj: PublicScripts.cpp PublicScripts.h CommonScripts.h BaseTrap.h BaseScript.h Script.h
-$(bin2dir)\PublicScripts.obj: PublicScripts.cpp PublicScripts.h CommonScripts.h BaseTrap.h BaseScript.h Script.h
-$(bin3dir)\PublicScripts.obj: PublicScripts.cpp PublicScripts.h CommonScripts.h BaseTrap.h BaseScript.h Script.h
+$(bindir)\luax2.obj: $(srcdir)\luax.cpp $(srcdir)\luax.hpp $(srcdir)\luax.h
+	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) $(DEFINES) -fo$(bindir)\luax2.obj -c $(srcdir)\luax.cpp
 
-$(bin1dir)\T1Scripts.obj: T1Scripts.cpp T1Scripts.h CommonScripts.h BaseTrap.h BaseScript.h Script.h
-$(bin2dir)\T2Scripts.obj: T2Scripts.cpp T2Scripts.h CommonScripts.h BaseTrap.h BaseScript.h Script.h
-$(bin3dir)\SS2Scripts.obj: SS2Scripts.cpp SS2Scripts.h CommonScripts.h BaseTrap.h BaseScript.h Script.h
+$(bindir)\shell.res: $(srcdir)\shell.rc $(srcdir)\version.rc
+	$(BRC32) -I.;$(BCCROOT)\Include $(DEFINES) -DBUILD=1000 -fo$@ -r $(srcdir)\shell.rc
 
-$(bin1dir)\ScriptDef.obj: ScriptDef.cpp PublicScripts.h T1Scripts.h BaseTrap.h BaseScript.h ScriptModule.h genscripts.h
-$(bin2dir)\ScriptDef.obj: ScriptDef.cpp PublicScripts.h T2Scripts.h BaseTrap.h BaseScript.h ScriptModule.h genscripts.h
-$(bin3dir)\ScriptDef.obj: ScriptDef.cpp PublicScripts.h SS2Scripts.h BaseTrap.h BaseScript.h ScriptModule.h genscripts.h
+$(bindir)\script.res: $(srcdir)\script.rc $(srcdir)\version.rc
+	$(BRC32) -I.;$(BCCROOT)\Include $(DEFINES) -DBUILD=1000 -fo$@ -r $(srcdir)\script.rc
 
-$(bin1dir)\script.res: script.rc version.rc
-$(bin2dir)\script.res: script.rc version.rc
-$(bin3dir)\script.res: script.rc version.rc
+$(bindir)\Dll.obj: $(srcdir)\Dll.cpp
+$(bindir)\Script.obj: $(srcdir)\Script.cpp $(srcdir)\Script.h
+$(bindir)\ScriptModule.obj: $(srcdir)\ScriptModule.cpp $(srcdir)\ScriptModule.h $(srcdir)\LgInterpreter.h $(LUAX)
+$(bindir)\LgInterpreter.obj: $(srcdir)\LgInterpreter.cpp $(srcdir)\LgInterpreter.h $(srcdir)\ScriptModule.h $(LUAX)
+$(bindir)\LgScript.obj: $(srcdir)\LgScript.cpp $(srcdir)\LgScript.h $(srcdir)\LgInterpreter.h $(srcdir)\ScriptModule.h $(srcdir)\Script.h $(srcdir)\LgMessage.h $(srcdir)\LgMultiParm.h $(LUAX)
+$(bindir)\LgMultiParm.obj: $(srcdir)\LgMultiParm.cpp $(srcdir)\LgMultiParm.h $(LUAMOD)\modlib.h $(LUAX)
+$(bindir)\LgStructData.obj: $(srcdir)\LgStructData.cpp $(srcdir)\LgStructData.h $(LUAMOD)\modlib.h $(LUAX)
+$(bindir)\LgMessage.obj: $(srcdir)\LgMessage.cpp $(srcdir)\LgMessage.h $(srcdir)\LgMultiParm.h $(LUAMOD)\modlib.h $(LUAX)
+$(bindir)\LgLinkset.obj: $(srcdir)\LgLinkset.cpp $(srcdir)\LgLinkset.h $(srcdir)\LgStructData.h $(LUAX)
+$(bindir)\LgServices.obj: $(srcdir)\LgServices.cpp $(srcdir)\LgServices.h $(srcdir)\LgMultiParm.h $(srcdir)\LgLinkset.h $(LUAMOD)\modlib.h $(LUAX)
 
-script-t1.osm: $(ALL1_OBJS) $(RES1_OBJS)
-	$(ILINK32) $(LDFLAGS) -b:0x11200000 $(LIBDIRS) $(BCC32STARTUP) $(ALL1_OBJS), $@ ,,import32.lib $(SCR1LIB) $(LIBS) $(BCC32RTLIB) , script-b32.def , $(RES1_OBJS)
+$(bindir)\LgServices1.obj: $(srcdir)\LgServices1.cpp $(srcdir)\LgServices.h $(srcdir)\LgMultiParm.h $(LUAMOD)\modlib.h $(LUAX)
+	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME1) $(INCLUDES) -fo$(bindir)\LgServices1.obj -c $(srcdir)\LgServices1.cpp
 
-script-t2.osm: $(ALL2_OBJS) $(RES2_OBJS)
-	$(ILINK32) $(LDFLAGS) -b:0x11200000 $(LIBDIRS) $(BCC32STARTUP) $(ALL2_OBJS), $@ ,,import32.lib $(SCR2LIB) $(LIBS) $(BCC32RTLIB) , script-b32.def , $(RES2_OBJS)
+$(bindir)\LgServices2.obj: $(srcdir)\LgServices2.cpp $(srcdir)\LgServices.h $(srcdir)\LgMultiParm.h $(LUAMOD)\modlib.h $(LUAX)
+	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME2) $(INCLUDES) -fo$(bindir)\LgServices2.obj -c $(srcdir)\LgServices2.cpp
 
-script-ss2.osm: $(ALL3_OBJS) $(RES3_OBJS)
-	$(ILINK32) $(LDFLAGS) -b:0x11200000 $(LIBDIRS) $(BCC32STARTUP) $(ALL3_OBJS), $@ ,,import32.lib $(SCR3LIB) $(LIBS) $(BCC32RTLIB) , script-b32.def , $(RES3_OBJS)
+$(bindir)\LgServices3.obj: $(srcdir)\LgServices3.cpp $(srcdir)\LgServices.h $(srcdir)\LgMultiParm.h $(LUAMOD)\modlib.h $(LUAX)
+	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME3) $(INCLUDES) -fo$(bindir)\LgServices3.obj -c $(srcdir)\LgServices3.cpp
 
-$(bindir)\scrversion.res: $(srcdir)\scrversion.rc
-	$(BRC32) -fo$@ -r $(srcdir)\scrversion.rc
+$(bindir)\luax.obj: $(srcdir)\luax.cpp $(srcdir)\luax.hpp $(srcdir)\luax.h
 
-$(bindir)\scrversion.obj: $(srcdir)\scrversion.cpp $(srcdir)\scrversion.h
-	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(DEFINES) $(GAME3) $(INCLUDES) -n$(bindir) -c $(srcdir)\scrversion.cpp
+$(bindir)\lapi.obj: $(LUADIR)\lapi.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lapi.h $(LUADIR)\lobject.h \
+	$(LUADIR)\llimits.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h $(LUADIR)\ltm.h \
+	$(LUADIR)\lzio.h $(LUADIR)\lmem.h $(LUADIR)\ldo.h $(LUADIR)\lfunc.h \
+	$(LUADIR)\lgc.h $(LUADIR)\lstring.h $(LUADIR)\ltable.h \
+	$(LUADIR)\lundump.h $(LUADIR)\lvm.h
+$(bindir)\lcode.obj: $(LUADIR)\lcode.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lcode.h $(LUADIR)\llex.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\lzio.h $(LUADIR)\lmem.h \
+	$(LUADIR)\lopcodes.h $(LUADIR)\lparser.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\ltm.h $(LUADIR)\ldo.h $(LUADIR)\lgc.h $(LUADIR)\ltable.h
+$(bindir)\ldebug.obj: $(LUADIR)\ldebug.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lapi.h $(LUADIR)\lobject.h \
+	$(LUADIR)\llimits.h $(LUADIR)\lcode.h $(LUADIR)\llex.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\lopcodes.h $(LUADIR)\lparser.h $(LUADIR)\ldebug.h \
+	$(LUADIR)\lstate.h $(LUADIR)\ltm.h $(LUADIR)\ldo.h $(LUADIR)\lfunc.h \
+	$(LUADIR)\lstring.h $(LUADIR)\lgc.h $(LUADIR)\ltable.h $(LUADIR)\lvm.h
+$(bindir)\ldo.obj: $(LUADIR)\ldo.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\ldo.h $(LUADIR)\lfunc.h $(LUADIR)\lgc.h \
+	$(LUADIR)\lopcodes.h $(LUADIR)\lparser.h $(LUADIR)\lstring.h \
+	$(LUADIR)\ltable.h $(LUADIR)\lundump.h $(LUADIR)\lvm.h
+$(bindir)\ldump.obj: $(LUADIR)\ldump.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lobject.h $(LUADIR)\llimits.h \
+	$(LUADIR)\lstate.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h $(LUADIR)\lmem.h \
+	$(LUADIR)\lundump.h
+$(bindir)\lfunc.obj: $(LUADIR)\lfunc.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lfunc.h $(LUADIR)\lobject.h \
+	$(LUADIR)\llimits.h $(LUADIR)\lgc.h $(LUADIR)\lmem.h $(LUADIR)\lstate.h \
+	$(LUADIR)\ltm.h $(LUADIR)\lzio.h
+$(bindir)\lgc.obj: $(LUADIR)\lgc.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\ldo.h $(LUADIR)\lfunc.h $(LUADIR)\lgc.h \
+	$(LUADIR)\lstring.h $(LUADIR)\ltable.h
+$(bindir)\llex.obj: $(LUADIR)\llex.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldo.h $(LUADIR)\lobject.h \
+	$(LUADIR)\llimits.h $(LUADIR)\lstate.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\llex.h $(LUADIR)\lparser.h $(LUADIR)\lstring.h \
+	$(LUADIR)\lgc.h $(LUADIR)\ltable.h
+$(bindir)\lmem.obj: $(LUADIR)\lmem.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\ldo.h
+$(bindir)\lobject.obj: $(LUADIR)\lobject.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldo.h $(LUADIR)\lobject.h \
+	$(LUADIR)\llimits.h $(LUADIR)\lstate.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\lstring.h $(LUADIR)\lgc.h $(LUADIR)\lvm.h
+$(bindir)\lopcodes.obj: $(LUADIR)\lopcodes.c \
+	$(LUADIR)\lopcodes.h $(LUADIR)\llimits.h $(LUADIR)\lua.h $(LUADIR)\luaconf.h
+$(bindir)\lparser.obj: $(LUADIR)\lparser.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lcode.h $(LUADIR)\llex.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\lzio.h $(LUADIR)\lmem.h \
+	$(LUADIR)\lopcodes.h $(LUADIR)\lparser.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\ltm.h $(LUADIR)\ldo.h $(LUADIR)\lfunc.h $(LUADIR)\lstring.h \
+	$(LUADIR)\lgc.h $(LUADIR)\ltable.h
+$(bindir)\lstate.obj: $(LUADIR)\lstate.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\ldo.h $(LUADIR)\lfunc.h $(LUADIR)\lgc.h \
+	$(LUADIR)\llex.h $(LUADIR)\lstring.h $(LUADIR)\ltable.h
+$(bindir)\lstring.obj: $(LUADIR)\lstring.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lmem.h $(LUADIR)\llimits.h \
+	$(LUADIR)\lobject.h $(LUADIR)\lstate.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lstring.h $(LUADIR)\lgc.h
+$(bindir)\ltable.obj: $(LUADIR)\ltable.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\ldo.h $(LUADIR)\lgc.h $(LUADIR)\ltable.h
+$(bindir)\ltm.obj: $(LUADIR)\ltm.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lobject.h $(LUADIR)\llimits.h \
+	$(LUADIR)\lstate.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h $(LUADIR)\lmem.h \
+	$(LUADIR)\lstring.h $(LUADIR)\lgc.h $(LUADIR)\ltable.h
+$(bindir)\lundump.obj: $(LUADIR)\lundump.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\ldo.h $(LUADIR)\lfunc.h $(LUADIR)\lstring.h \
+	$(LUADIR)\lgc.h $(LUADIR)\lundump.h
+$(bindir)\lvm.obj: $(LUADIR)\lvm.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\ldebug.h $(LUADIR)\lstate.h \
+	$(LUADIR)\lobject.h $(LUADIR)\llimits.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h \
+	$(LUADIR)\lmem.h $(LUADIR)\ldo.h $(LUADIR)\lfunc.h $(LUADIR)\lgc.h \
+	$(LUADIR)\lopcodes.h $(LUADIR)\lstring.h $(LUADIR)\ltable.h $(LUADIR)\lvm.h
+$(bindir)\lzio.obj: $(LUADIR)\lzio.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\llimits.h $(LUADIR)\lmem.h \
+	$(LUADIR)\lstate.h $(LUADIR)\lobject.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h
+$(bindir)\lctype.obj: $(LUADIR)\lctype.c $(LUADIR)\lctype.h
+$(bindir)\liolib.obj: $(LUADIR)\liolib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+$(bindir)\lmathlib.obj: $(LUADIR)\lmathlib.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+$(bindir)\loslib.obj: $(LUADIR)\loslib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+$(bindir)\lstrlib.obj: $(LUADIR)\lstrlib.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+$(bindir)\ltablib.obj: $(LUADIR)\ltablib.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+$(bindir)\loadlib.obj: $(LUADIR)\loadlib.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+$(bindir)\linit.obj: $(LUADIR)\linit.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
 
-version.osm: $(bindir)\scrversion.obj $(OSM_OBJS) $(bindir)\scrversion.res
-	$(ILINK32) $(LDFLAGS) -b:0x12100000 $(LIBDIRS) $(BCC32STARTUP) $(bindir)\scrversion.obj $(OSM_OBJS), $@ ,,import32.lib $(SCR2LIB) $(LGLIB) uuid.lib version.lib $(BCC32RTLIB) , script-b32.def , $(bindir)\scrversion.res
+$(bindir)\vec.obj: $(LUAMOD)\vec.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h $(LUAMOD)\modlib.h
+$(bindir)\final.obj: $(LUAMOD)\final.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h $(LUAMOD)\modlib.h
+$(bindir)\llist.obj: $(LUAMOD)\llist.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h $(LUAMOD)\modlib.h
+$(bindir)\lext.obj: $(LUAMOD)\lext.c \
+	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h $(LUAMOD)\modlib.h
+
+$(bindir)\lauxlib1.obj: $(LUADIR)\lauxlib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -fo$(bindir)\lauxlib1.obj -c $(LUADIR)\lauxlib.c
+
+$(bindir)\lbaselib1.obj: $(LUADIR)\lbaselib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) $(DEFINES) -fo$(bindir)\lbaselib1.obj -c $(LUADIR)\lbaselib.c
+
+$(bindir)\ldblib1.obj: $(LUADIR)\ldblib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) $(DEFINES) -fo$(bindir)\ldblib1.obj -c $(LUADIR)\ldblib.c
+
+$(bindir)\modlib1.obj: $(LUAMOD)\modlib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h $(LUAMOD)\modlib.h
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) $(DEFINES) -fo$(bindir)\modlib1.obj -c $(LUAMOD)\modlib.c
+
+$(bindir)\lauxlib2.obj: $(LUADIR)\lauxlib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) $(DEFINES) -fo$(bindir)\lauxlib2.obj -c $(LUADIR)\lauxlib.c
+
+$(bindir)\lbaselib2.obj: $(LUADIR)\lbaselib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) $(DEFINES) -fo$(bindir)\lbaselib2.obj -c $(LUADIR)\lbaselib.c
+
+$(bindir)\ldblib2.obj: $(LUADIR)\ldblib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) $(DEFINES) -fo$(bindir)\ldblib2.obj -c $(LUADIR)\ldblib.c
+
+$(bindir)\modlib2.obj: $(LUAMOD)\modlib.c \
+		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h $(LUAMOD)\modlib.h
+	$(CC) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(LUAINC) $(DEFINES) -fo$(bindir)\modlib2.obj -c $(LUAMOD)\modlib.c

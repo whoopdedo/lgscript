@@ -34,7 +34,7 @@ DH2LIB = -ldh2
 
 LUADIR = ./lua
 LUAMOD = ./mod
-LUAFLAGS =  -W -Wall
+LUAFLAGS = -W -Wall
 LUADEF = -DLUA_WIN -DLUA_ANSI -DLGSCRIPT
 LUADEF2 = -DLUA_WIN -DLUA_ANSI -DLGSCRIPT -DLUA_NOTERM
 LUADEBUG =
@@ -212,8 +212,6 @@ $(bindir)/%.o: $(LUAMOD)/%.c
 %_res.o: %.rc
 	$(RC) $(DEFINES) -o $@ -i $<
 
-%.osm: %.o $(OSM_OBJS)
-	$(LD) $(LDFLAGS) $(LDDEBUG) $(LIBDIRS) -o $@ $(DLL_DEF) $< $(OSM_OBJS) $(SCR2LIB) $(LIBS)
 
 all: $(bindir) lgs.osm lgscript.exe
 
@@ -235,7 +233,7 @@ $(bindir)/exports.o: $(bindir)/ScriptModule.o
 	$(DLLTOOL) $(DLLFLAGS) --output-exp $@ $^
 
 lgs.osm: $(LGS_OBJS) $(OSM_OBJS) $(RES_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ1)
-	$(LD) $(LDFLAGS) -Wl,--image-base=0x11400000 $(LDDEBUG) $(LIBDIRS) -o $@ $(DLL_DEF) $^ $(LIBS)
+	$(LD) $(LDFLAGS) -Wl,--image-base=0x11400000 $(LDDEBUG) $(LIBDIRS) -o $@ $^ $(LIBS)
 
 lgscript.exe: $(SHELL_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ2)
 	$(CXX) $(LDDEBUG) -o $@ $^
@@ -257,19 +255,19 @@ $(bindir)/Script.o: $(srcdir)/Script.cpp $(srcdir)/Script.h
 $(bindir)/ScriptModule.o: $(srcdir)/ScriptModule.cpp $(srcdir)/ScriptModule.h $(srcdir)/LgInterpreter.h $(LUAX)
 $(bindir)/LgInterpreter.o: $(srcdir)/LgInterpreter.cpp $(srcdir)/LgInterpreter.h $(srcdir)/ScriptModule.h $(LUAX)
 $(bindir)/LgScript.o: $(srcdir)/LgScript.cpp $(srcdir)/LgScript.h $(srcdir)/LgInterpreter.h $(srcdir)/ScriptModule.h $(srcdir)/Script.h $(srcdir)/LgMessage.h $(srcdir)/LgMultiParm.h $(LUAX)
-$(bindir)/LgMultiParm.o: $(srcdir)/LgMultiParm.cpp $(srcdir)/LgMultiParm.h $(LUAX)
-$(bindir)/LgStructData.o: $(srcdir)/LgStructData.cpp $(srcdir)/LgStructData.h $(LUAX)
-$(bindir)/LgMessage.o: $(srcdir)/LgMessage.cpp $(srcdir)/LgMessage.h $(srcdir)/LgMultiParm.h $(LUAX)
-$(bindir)/LgLinkset.o: $(srcdir)/LgLinkset.cpp $(srcdir)/LgLinkset.h
-$(bindir)/LgServices.o: $(srcdir)/LgServices.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(srcdir)/LgLinkset.h $(LUAX)
+$(bindir)/LgMultiParm.o: $(srcdir)/LgMultiParm.cpp $(srcdir)/LgMultiParm.h $(LUAMOD)/modlib.h $(LUAX)
+$(bindir)/LgStructData.o: $(srcdir)/LgStructData.cpp $(srcdir)/LgStructData.h $(LUAMOD)/modlib.h $(LUAX)
+$(bindir)/LgMessage.o: $(srcdir)/LgMessage.cpp $(srcdir)/LgMessage.h $(srcdir)/LgMultiParm.h $(LUAMOD)/modlib.h $(LUAX)
+$(bindir)/LgLinkset.o: $(srcdir)/LgLinkset.cpp $(srcdir)/LgLinkset.h $(srcdir)/LgStructData.h $(LUAX)
+$(bindir)/LgServices.o: $(srcdir)/LgServices.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(srcdir)/LgLinkset.h $(LUAMOD)/modlib.h $(LUAX)
 
-$(bindir)/LgServices1.o: $(srcdir)/LgServices1.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(LUAX)
+$(bindir)/LgServices1.o: $(srcdir)/LgServices1.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(LUAMOD)/modlib.h $(LUAX)
 	$(CXX) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME1) $(INCLUDES) -o $@ -c $(srcdir)/LgServices1.cpp
 
-$(bindir)/LgServices2.o: $(srcdir)/LgServices2.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(LUAX)
+$(bindir)/LgServices2.o: $(srcdir)/LgServices2.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(LUAMOD)/modlib.h $(LUAX)
 	$(CXX) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME2) $(INCLUDES) -o $@ -c $(srcdir)/LgServices2.cpp
 
-$(bindir)/LgServices3.o: $(srcdir)/LgServices3.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(LUAX)
+$(bindir)/LgServices3.o: $(srcdir)/LgServices3.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(LUAMOD)/modlib.h $(LUAX)
 	$(CXX) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME3) $(INCLUDES) -o $@ -c $(srcdir)/LgServices3.cpp
 
 $(bindir)/luax.o: $(srcdir)/luax.cpp $(srcdir)/luax.hpp $(srcdir)/luax.h
@@ -363,11 +361,11 @@ $(bindir)/lzio.o: $(LUADIR)/lzio.c \
 	$(LUADIR)/lstate.h $(LUADIR)/lobject.h $(LUADIR)/ltm.h $(LUADIR)/lzio.h
 $(bindir)/lctype.o: $(LUADIR)/lctype.c $(LUADIR)/lctype.h
 $(bindir)/liolib.o: $(LUADIR)/liolib.c \
-		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/lmathlib.o: $(LUADIR)/lmathlib.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/loslib.o: $(LUADIR)/loslib.c \
-		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/lstrlib.o: $(LUADIR)/lstrlib.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/ltablib.o: $(LUADIR)/ltablib.c \
@@ -387,15 +385,15 @@ $(bindir)/lext.o: $(LUAMOD)/lext.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUAMOD)/modlib.h
 
 $(bindir)/lauxlib1.o: $(LUADIR)/lauxlib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h
 	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/lauxlib.c
 
 $(bindir)/lbaselib1.o: $(LUADIR)/lbaselib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/lbaselib.c
 
 $(bindir)/ldblib1.o: $(LUADIR)/ldblib.c \
-	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
+		$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(LUADIR)/ldblib.c
 
 $(bindir)/modlib1.o: $(LUAMOD)/modlib.c \
