@@ -5,7 +5,9 @@
 */
 
 
+#ifndef LGSCRIPT
 #include <ctype.h>
+#endif
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>

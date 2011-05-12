@@ -34,7 +34,7 @@ DH2LIB = -ldh2
 
 LUADIR = ./lua
 LUAMOD = ./mod
-LUAFLAGS = -W -Wall
+LUAFLAGS = -W -Wall -D_NO_OLDNAMES
 LUADEF = -DLUA_WIN -DLUA_ANSI -DLGSCRIPT
 LUADEF2 = -DLUA_WIN -DLUA_ANSI -DLGSCRIPT -DLUA_NOTERM
 LUADEBUG =
@@ -71,6 +71,7 @@ LUA_SRCS = $(LUADIR)/lapi.c $(LUADIR)/lapi.h \
 	$(LUADIR)/lualib.h \
 	$(LUADIR)/luaconf.h \
 	$(LUADIR)/lua.h \
+	$(LUAMOD)/ctype.c $(LUAMOD)/ctype.h \
 	$(LUAMOD)/vec.c \
 	$(LUAMOD)/final.c \
 	$(LUAMOD)/llist.c \
@@ -100,6 +101,7 @@ LUA_OBJS = $(bindir)/lapi.o \
 	$(bindir)/ltablib.o \
 	$(bindir)/lstrlib.o \
 	$(bindir)/loadlib.o \
+	$(bindir)/ctype.o \
 	$(bindir)/vec.o \
 	$(bindir)/final.o \
 	$(bindir)/lext.o
@@ -156,7 +158,7 @@ LDFLAGS = -mwindows -mdll -Wl,--enable-auto-image-base
 LIBDIRS = -L. -L$(LGDIR) -L$(SCRLIBDIR) -L$(DH2DIR)
 LIBS = $(DH2LIB) $(LGLIB) -luuid
 INCLUDES = -I$(srcdir) $(LUAINC) -I$(LGDIR) -I$(SCRLIBDIR) -I$(DH2DIR)
-CXXFLAGS = -W -Wall -masm=intel -Wno-invalid-offsetof
+CXXFLAGS = -W -Wall -masm=intel -Wno-invalid-offsetof -D_NO_OLDNAMES
 DLLFLAGS = --add-underscore
 DLLDEF = $(srcdir)/script.def
 
@@ -271,6 +273,7 @@ $(bindir)/LgServices3.o: $(srcdir)/LgServices3.cpp $(srcdir)/LgServices.h $(srcd
 	$(CXX) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME3) $(INCLUDES) -o $@ -c $(srcdir)/LgServices3.cpp
 
 $(bindir)/luax.o: $(srcdir)/luax.cpp $(srcdir)/luax.hpp $(srcdir)/luax.h
+$(bindir)/strtocolor.o: $(srcdir)/strtocolor.cpp $(srcdir)/utils.h
 
 $(bindir)/lapi.o: $(LUADIR)/lapi.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lapi.h $(LUADIR)/lobject.h \
@@ -359,7 +362,6 @@ $(bindir)/lvm.o: $(LUADIR)/lvm.c \
 $(bindir)/lzio.o: $(LUADIR)/lzio.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/llimits.h $(LUADIR)/lmem.h \
 	$(LUADIR)/lstate.h $(LUADIR)/lobject.h $(LUADIR)/ltm.h $(LUADIR)/lzio.h
-$(bindir)/lctype.o: $(LUADIR)/lctype.c $(LUADIR)/lctype.h
 $(bindir)/liolib.o: $(LUADIR)/liolib.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 $(bindir)/lmathlib.o: $(LUADIR)/lmathlib.c \
@@ -375,6 +377,7 @@ $(bindir)/loadlib.o: $(LUADIR)/loadlib.c \
 $(bindir)/linit.o: $(LUADIR)/linit.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h
 
+$(bindir)/ctype.o: $(LUAMOD)/ctype.c $(LUAMOD)/ctype.h
 $(bindir)/vec.o: $(LUAMOD)/vec.c \
 	$(LUADIR)/lua.h $(LUADIR)/luaconf.h $(LUADIR)/lauxlib.h $(LUADIR)/lualib.h $(LUAMOD)/modlib.h
 $(bindir)/final.o: $(LUAMOD)/final.c \

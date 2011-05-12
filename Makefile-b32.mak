@@ -81,6 +81,7 @@ LUA_SRCS = $(LUADIR)\lapi.c $(LUADIR)\lapi.h \
 	$(LUADIR)\lualib.h \
 	$(LUADIR)\luaconf.h \
 	$(LUADIR)\lua.h \
+	$(LUAMOD)\ctype.c $(LUAMOD)\ctype.h \
 	$(LUAMOD)\vec.c \
 	$(LUAMOD)\final.c \
 	$(LUAMOD)\llist.c \
@@ -110,6 +111,7 @@ LUA_OBJS = $(bindir)\lapi.obj \
 	$(bindir)\ltablib.obj \
 	$(bindir)\lstrlib.obj \
 	$(bindir)\loadlib.obj \
+	$(bindir)\ctype.obj \
 	$(bindir)\vec.obj \
 	$(bindir)\final.obj \
 	$(bindir)\lext.obj
@@ -271,6 +273,7 @@ $(bindir)\LgServices3.obj: $(srcdir)\LgServices3.cpp $(srcdir)\LgServices.h $(sr
 	$(CC) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME3) $(INCLUDES) -fo$(bindir)\LgServices3.obj -c $(srcdir)\LgServices3.cpp
 
 $(bindir)\luax.obj: $(srcdir)\luax.cpp $(srcdir)\luax.hpp $(srcdir)\luax.h
+$(bindir)\strtocolor.obj: $(srcdir)\strtocolor.cpp $(srcdir)\utils.h
 
 $(bindir)\lapi.obj: $(LUADIR)\lapi.c \
 	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lapi.h $(LUADIR)\lobject.h \
@@ -359,7 +362,6 @@ $(bindir)\lvm.obj: $(LUADIR)\lvm.c \
 $(bindir)\lzio.obj: $(LUADIR)\lzio.c \
 	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\llimits.h $(LUADIR)\lmem.h \
 	$(LUADIR)\lstate.h $(LUADIR)\lobject.h $(LUADIR)\ltm.h $(LUADIR)\lzio.h
-$(bindir)\lctype.obj: $(LUADIR)\lctype.c $(LUADIR)\lctype.h
 $(bindir)\liolib.obj: $(LUADIR)\liolib.c \
 		$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
 $(bindir)\lmathlib.obj: $(LUADIR)\lmathlib.c \
@@ -375,6 +377,7 @@ $(bindir)\loadlib.obj: $(LUADIR)\loadlib.c \
 $(bindir)\linit.obj: $(LUADIR)\linit.c \
 	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h
 
+$(bindir)\ctype.obj: $(LUADIR)\ctype.c $(LUADIR)\ctype.h
 $(bindir)\vec.obj: $(LUAMOD)\vec.c \
 	$(LUADIR)\lua.h $(LUADIR)\luaconf.h $(LUADIR)\lauxlib.h $(LUADIR)\lualib.h $(LUAMOD)\modlib.h
 $(bindir)\final.obj: $(LUAMOD)\final.c \

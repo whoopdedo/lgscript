@@ -27,7 +27,7 @@
 #include "LgMessage.h"
 #include "ScriptModule.h"
 
-#include <cstring>
+#include "mod/ctype.h"
 
 using namespace Lgs;
 using namespace luax;
@@ -124,7 +124,7 @@ STDMETHODIMP LgScript::ReceiveMessage(sScrMsg* pMsg, sMultiParm* pReply, eScrTra
 	{
 		if (m_iLastMsg < 0)
 			BeginScript();
-		if (_stricmp(pMsg->message, "EndScript") != 0)
+		if (strcasecmp(pMsg->message, "EndScript") != 0)
 		{
 			// Skip EndScript from the script manager
 			// so we can guarantee it is always the last message.

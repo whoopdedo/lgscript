@@ -799,8 +799,9 @@ struct lua_longjmp;
 #define getenv(x)	NULL
 #endif
 
-#endif
+#include "mod/ctype.h"
 
+#endif
 
 #endif
 

@@ -22,7 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cctype>
+#include "mod/ctype.h"
 
 static const unsigned char g_cHexTable[] = {
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

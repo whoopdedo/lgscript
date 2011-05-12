@@ -4,7 +4,9 @@
 ** See Copyright Notice in lua.h
 */
 
+#ifndef LGSCRIPT
 #include <ctype.h>
+#endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

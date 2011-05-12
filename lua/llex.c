@@ -5,7 +5,9 @@
 */
 
 
+#ifndef LGSCRIPT
 #include <ctype.h>
+#endif
 #include <locale.h>
 #include <string.h>
 

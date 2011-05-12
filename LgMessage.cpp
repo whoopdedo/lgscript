@@ -23,8 +23,10 @@
 #include "LgMessage.h"
 #include "LgMultiParm.h"
 #include "mod/modlib.h"
-#include <cstddef>
+#include "mod/ctype.h"
 #include <darkhook.h>
+#include <cstddef>
+#include <cstring>
 
 using namespace Lgs;
 using namespace luax;
@@ -93,7 +95,7 @@ void ScriptMessage::push(sScrMsg* msg)
 	m_lua.getField(s_ClassName, LUA_REGISTRYINDEX);
 	if (m_lua.getField(pszClass).isNil())
 	{
-		if (0 == _stricmp(pszClass, "sDHNotifyMsg"))
+		if (0 == strcasecmp(pszClass, "sDHNotifyMsg"))
 		{
 			m_lua.pop();
 			switch (static_cast<sDHNotifyMsg*>(msg)->typeDH)
