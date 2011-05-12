@@ -33,7 +33,7 @@
 class cScrClassDesc : public sScrClassDesc
 {
 public:
-	cScrClassDesc(const char* cl, const char* mod, const char* base, ScriptFactoryProc proc)
+	cScrClassDesc(const char* mod, const char* cl, const char* base, ScriptFactoryProc proc)
 	{
 		pszClass = cl;
 		pszModule = mod;
