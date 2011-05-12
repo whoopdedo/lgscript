@@ -238,10 +238,10 @@ LUA_API int lmod_fcall (lua_State *L, int nargs, int nresults, int errfunc
 #else
 	lua_callk(L, nargs+1, LUA_MULTRET, 0, cfunc);
 #endif
-	status = lua_tointeger(L, 1);
-	lua_remove(L, 1);
+	status = lua_tointeger(L, func);
+	lua_remove(L, func);
 	if (status == LUA_OK && nresults != LUA_MULTRET)
-		lua_settop(L, nresults);
+		lua_settop(L, func+nresults-1);
 	return status;
 }
 
