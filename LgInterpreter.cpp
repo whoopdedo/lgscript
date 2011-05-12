@@ -280,22 +280,20 @@ int ScriptInterpreter::Environment(void)
 	// chunk script env
 	S.push("script").copy(-3).rawSet(-3).remove(-2);
 	//S.insert(-2).setField("script");  // env['script'] = script
-	S.insert(iChunk);  // move env below chunk
-	S.copy().setFEnv(-2);  // env chunk
-	S.copy();
+	S.copy().setFEnv(iChunk);
 	try
 	{
-		S.push(m_bEditor ? Traceback : NoTraceback).insert(); // move traceback below chunk
-		S.pCall(0, 0, -2);
+		S.push(m_bEditor ? Traceback : NoTraceback)  // chunk env traceback chunk
+		 .copy(iChunk).pCall(0, 0, -2);
 	}
 	catch (Exception&)
 	{
-		S.copy(LUA_GLOBALSINDEX).setFEnv(iChunk+1);
+		S.copy(LUA_GLOBALSINDEX).setFEnv(iChunk);
 		S.setTop(iChunk-1);
 		return 1;
 	}
-	S.copy(LUA_GLOBALSINDEX).setFEnv(iChunk+1);
-	S.setTop(iChunk);  // env
+	S.copy(LUA_GLOBALSINDEX).setFEnv(iChunk);
+	S.remove(iChunk).setTop(iChunk);  // env
 	return 0;
 }
 
