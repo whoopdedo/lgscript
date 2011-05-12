@@ -39,7 +39,7 @@
 #define ERRLIB		1
 #define ERRFUNC		2
 
-#define setprogdir(L)		((void)0)
+/*#define setprogdir(L)		((void)0)*/
 
 
 static void ll_unloadlib (void *lib);

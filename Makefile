@@ -72,6 +72,7 @@ LUA_SRCS = $(LUADIR)/lapi.c $(LUADIR)/lapi.h \
 	$(LUADIR)/luaconf.h \
 	$(LUADIR)/lua.h \
 	$(LUAMOD)/ctype.c $(LUAMOD)/ctype.h \
+	$(LUAMOD)/progdir.c \
 	$(LUAMOD)/vec.c \
 	$(LUAMOD)/final.c \
 	$(LUAMOD)/llist.c \
@@ -101,6 +102,7 @@ LUA_OBJS = $(bindir)/lapi.o \
 	$(bindir)/ltablib.o \
 	$(bindir)/lstrlib.o \
 	$(bindir)/loadlib.o \
+	$(bindir)/progdir.o \
 	$(bindir)/ctype.o \
 	$(bindir)/vec.o \
 	$(bindir)/final.o \

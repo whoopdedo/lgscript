@@ -20,6 +20,20 @@
  *****************************************************************************/
 #include <windows.h>
 
+extern char progdir[MAX_PATH+1];
+
+static BOOL setprogdir (HINSTANCE h) {
+	char buff[MAX_PATH+1];
+	char *lb;
+	DWORD nsize = sizeof(buff);
+	DWORD n = GetModuleFileNameA(h, buff, nsize);
+	if (n == 0 || n == nsize || (lb = strrchr(buff, '\\')) == NULL)
+		return FALSE;
+	*lb = '\0';
+	lstrcpyA(progdir, buff);
+	return TRUE;
+}
+
 extern "C"
 BOOL WINAPI
 DllMain (HINSTANCE hDLL, DWORD dwReason, PVOID lpResv)
@@ -27,6 +41,9 @@ DllMain (HINSTANCE hDLL, DWORD dwReason, PVOID lpResv)
 	if (dwReason == DLL_PROCESS_ATTACH)
 	{
 		DisableThreadLibraryCalls(hDLL);
+		lstrcpyA(progdir, ".");
+		if (!setprogdir(hDLL))
+			setprogdir(NULL);
 		return TRUE;
 	}
 	return TRUE;

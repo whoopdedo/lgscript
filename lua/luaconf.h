@@ -90,7 +90,7 @@
 #define LUA_PATH_DEFAULT  \
 		LUA_LDIR"?.luac+" LUA_LDIR"?.lua"
 #define LUA_CPATH_DEFAULT \
-		LUA_CDIR"?.osl+" LUA_CDIR"loadall.osl"
+		LUA_CDIR"?.osl"
 
 #elif defined(_WIN32)
 /*
@@ -797,6 +797,8 @@ struct lua_longjmp;
 
 #ifdef loadlib_c
 #define getenv(x)	NULL
+struct lua_State;
+extern void setprogdir (lua_State *L);
 #endif
 #if defined(LUA_CORE) || defined(LUA_LIB)
 #include "mod/ctype.h"

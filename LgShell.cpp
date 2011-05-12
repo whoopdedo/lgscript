@@ -20,6 +20,7 @@
  *****************************************************************************/
 #include <csignal>
 #include <cstring>
+#include <cstdlib>
 #include <cerrno>
 #include <stdexcept>
 #include <iostream>
@@ -702,10 +703,29 @@ int LgScriptApp::pMain(Handle _l)
 	return app->main();
 }
 
+extern char progdir[MAX_PATH+1];
+
+static void setprogdir (const char* arg0) {
+	char *lb, *ls;
+	if (arg0 == NULL)
+		return;
+	lb = strrchr(arg0, '\\');
+	ls = strrchr(arg0, '/');
+	if (ls > lb)
+		lb = ls;
+	if (lb != NULL)
+	{
+		strncpy(progdir, arg0, lb-arg0);
+		progdir[lb-arg0] = '\0';
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	try
 	{
+		strcpy(progdir, ".");
+		setprogdir(argv[0]);
 		LgScriptApp app(argc, argv);
 		app.pCall(LgScriptApp::pMain, &app);
 		return (app.getStatus() != 0);
