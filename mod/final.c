@@ -97,8 +97,8 @@ static int do_fcall (lua_State * L)
 	int status;
 	int errfunc = 0;
 	int nargs = lua_gettop(L) - 1;
-	if (!lua_isnil(L, lua_upvalueindex(2))) {
-		lua_pushvalue(L, lua_upvalueindex(2));
+	if (!lua_isnil(L, lua_upvalueindex(1))) {
+		lua_pushvalue(L, lua_upvalueindex(1));
 		lua_insert(L, 1);
 		errfunc = 1;
 	}
@@ -120,7 +120,7 @@ static int do_fcall (lua_State * L)
 	else
 		lua_pushnil(L);
 	/* do_final(env._final, 0, err, true) */
-	lua_pushvalue(L, lua_upvalueindex(1));
+	lua_pushvalue(L, lua_upvalueindex(2));
 	do_final(L, 0, 1);
 	/* return unpack(result) */
 	lua_pushinteger(L, status);
@@ -135,7 +135,7 @@ static int getfinalstack (lua_State * L)
 	for (lvl = 1; lua_getstack(L, lvl, &ar); lvl++) {
 		if (lua_getinfo(L, "f", &ar)) {
 			if (lua_tocfunction(L, -1) == do_fcall) {
-				lua_getupvalue(L, -1, 1);
+				lua_getupvalue(L, -1, 2);
 				lua_replace(L, -2);
 				return 1;
 			}
@@ -215,6 +215,11 @@ LUA_API int lmod_fcall (lua_State *L, int nargs, int nresults, int errfunc
 #endif
 ) {
 	int status;
+	int func = lua_gettop(L) - nargs;
+	if (errfunc)
+		lua_pushvalue(L, errfunc);
+	else
+		lua_pushnil(L);
 	/* local env = {_final={}} */
 	lua_createtable(L, 0, 0);
 	/* local proxy = newproxy(true) */
@@ -226,12 +231,8 @@ LUA_API int lmod_fcall (lua_State *L, int nargs, int nresults, int errfunc
 	lua_setuservalue(L, -2);
 	lua_setfield(L, -2, "proxy");
 	/* setfenv(1, setmetatable(env,{__index=_G})) */
-	if (errfunc)
-		lua_pushvalue(L, errfunc);
-	else
-		lua_pushnil(L);
 	lua_pushcclosure(L, do_fcall, 2);
-	lua_insert(L, 1);
+	lua_insert(L, func);
 #if LUA_VERSION_NUM<502
 	lua_call(L, nargs+1, LUA_MULTRET);
 #else
