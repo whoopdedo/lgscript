@@ -7,8 +7,8 @@
 
 #ifndef LGSCRIPT
 #include <ctype.h>
-#endif
 #include <locale.h>
+#endif
 #include <string.h>
 
 #define llex_c
@@ -170,6 +170,7 @@ static int check_next (LexState *ls, const char *set) {
 }
 
 
+#ifndef LGSCRIPT
 static void buffreplace (LexState *ls, char from, char to) {
   size_t n = luaZ_bufflen(ls->buff);
   char *p = luaZ_buffer(ls->buff);
@@ -190,6 +191,7 @@ static void trydecpoint (LexState *ls, SemInfo *seminfo) {
     luaX_lexerror(ls, "malformed number", TK_NUMBER);
   }
 }
+#endif
 
 
 /* LUA_NUMBER */
@@ -203,9 +205,14 @@ static void read_numeral (LexState *ls, SemInfo *seminfo) {
   while (isalnum(ls->current) || ls->current == '_')
     save_and_next(ls);
   save(ls, '\0');
+#ifndef LGSCRIPT
   buffreplace(ls, '.', ls->decpoint);  /* follow locale for decimal point */
   if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->r))  /* format error? */
     trydecpoint(ls, seminfo); /* try to update decimal point separator */
+#else
+  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->r))  /* format error? */
+    luaX_lexerror(ls, "malformed number", TK_NUMBER);
+#endif
 }
 
 
