@@ -20,7 +20,7 @@
  *     contributors may be used to endorse or promote products derived from
  *     this software without specific prior written permission.
  */
-#include <stddef.h>
+#include <string.h>
 #include <limits.h>
 
 #define LISbit(B)	(1 << (B))

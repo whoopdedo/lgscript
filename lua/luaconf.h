@@ -798,8 +798,9 @@ struct lua_longjmp;
 #ifdef loadlib_c
 #define getenv(x)	NULL
 #endif
-
+#if defined(LUA_CORE) || defined(LUA_LIB)
 #include "mod/ctype.h"
+#endif
 
 #endif
 
