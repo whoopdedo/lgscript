@@ -121,7 +121,7 @@ void ScriptMessage::push(sScrMsg* msg)
 			m_lua.pop().getField("");
 	}
 	m_lua.setMetatable(iMsg).setTop(iMsg);
-	msg->AddRef();
+	//msg->AddRef();
 }
 
 void ScriptMessage::Init(State& S)
@@ -242,7 +242,7 @@ int ScriptMessage::Release(Handle L)
 	sScrMsg** msg = S.toUserdata(Userdata<sScrMsg*>(), 1);
 	if (*msg)
 	{
-		(*msg)->Release();
+		//(*msg)->Release();
 		*msg = NULL;
 	}
 	return 1;

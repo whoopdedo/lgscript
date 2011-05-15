@@ -165,7 +165,8 @@ long LgScript::DispatchMessage(sScrMsg* pMsg, cMultiParm* pReply)
 		m_pInterpreter->PushTraceback(S, this);
 		S->insert();  // screnv traceback function
 		ScriptMessage(S).push(pMsg);  // screnv traceback function message
-		//S->push(Userdata<sScrMsg>(pMsg));
+		// Message references cannot be kept outside of the message handler.
+		sScrMsg** pScrMsg = S->toUserdata(Userdata<sScrMsg*>(), -1);
 		try
 		{
 			S->fCall(1, 1, -3);
@@ -174,9 +175,13 @@ long LgScript::DispatchMessage(sScrMsg* pMsg, cMultiParm* pReply)
 		}
 		catch (Exception&)
 		{
+			if (*pScrMsg)
+				*pScrMsg = NULL;
 			// Need to do this in case there is an open linkset.
 			S->gcCollect();
 		}
+		if (*pScrMsg)
+			*pScrMsg = NULL;
 	}
 	}
 	catch (Exception&)
