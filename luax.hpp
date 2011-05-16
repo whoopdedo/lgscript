@@ -198,6 +198,13 @@ namespace luax
 
 		static int panic(Handle L);
 		ErrCode raise(ErrCode err);
+		const char* errMsg(void)
+		{
+			const char* msg = asString(-1);
+			if (!msg)
+				msg = "Unknown error";
+			return msg;
+		}
 
 		friend class Frame;
 

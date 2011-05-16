@@ -131,6 +131,14 @@ STDMETHODIMP LgScript::ReceiveMessage(sScrMsg* pMsg, sMultiParm* pReply, eScrTra
 			iRet = DispatchMessage(pMsg, static_cast<cMultiParm*>(pReply));
 		}
 	}
+	catch (std::exception& e)
+	{
+		ScriptModule::MPrintf("!!! Unexpected exception in %s [%s:%d]: %s\n",
+			pMsg->message, Name(), ObjId(), e.what());
+		ScriptModule::MPrintf("!!! Bailing on script.\n");
+		m_bFailed = true;
+		iRet = -1;
+	}
 	catch (...)
 	{
 		ScriptModule::MPrintf("!!! Unhandled exception in %s [%s:%d]\n",

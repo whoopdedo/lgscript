@@ -87,7 +87,7 @@ const char* StringDump::read(State&, size_t *sz)
 int State::panic(Handle L)
 {
 	State S(L);
-	throw Exception(S.asString(-1));
+	throw Exception(S.errMsg());
 	return 0;
 }
 
@@ -98,11 +98,11 @@ ErrCode State::raise(ErrCode err)
 	case NoErr:
 	case Yielded:
 		break;
-	case ErrRun: throw RuntimeError(asString(-1));
-	case ErrSyntax: throw SyntaxError(asString(-1));
-	case ErrMem: throw OutOfMemory(asString(-1));
-	case ErrFile: throw FileError(asString(-1));
-	default: throw Exception(asString(-1));
+	case ErrRun: throw RuntimeError(errMsg());
+	case ErrSyntax: throw SyntaxError(errMsg());
+	case ErrMem: throw OutOfMemory(errMsg());
+	case ErrFile: throw FileError(errMsg());
+	default: throw Exception(errMsg());
 	};
 	return err;
 }
