@@ -43,6 +43,7 @@ static const luaL_Reg lualibs[] = {
   {LUA_DBLIBNAME, luaopen_debug},
   {LFINALIZER_NAME, luaopen_finalizer},
   {LVECTOR_NAME, luaopen_vector},
+  {LBITLIB_NAME, luaopen_bit32},
   {"ext", luaopen_ext},
   {NULL, NULL}
 };

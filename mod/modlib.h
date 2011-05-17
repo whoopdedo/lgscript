@@ -56,9 +56,12 @@ LUA_API int lmod_fcall (lua_State *L, int nargs, int nresults, int errfunc, lua_
 LUA_API int lmod_getfinalframe (lua_State *L);  /* [-0, +0, e] */
 
 
+#define LBITLIB_NAME		"bit32"
+
 LUALIB_API int luaopen_vector (lua_State* L);
 LUALIB_API int luaopen_list (lua_State* L);
 LUALIB_API int luaopen_ext (lua_State* L);
 LUALIB_API int luaopen_finalizer (lua_State *L);
+LUALIB_API int luaopen_bit32 (lua_State *L);
 
 #endif
