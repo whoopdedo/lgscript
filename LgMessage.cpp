@@ -32,48 +32,60 @@ using namespace Lgs;
 using namespace luax;
 
 const char ScriptMessage::s_ClassName[] = "LgMessage";
+const char ScriptMessage::s_HackName[] = "LgMessageHack";
 
+// How To Piss-off A Script Developer:
+// 1) Declare an interface as __thiscall
+// 2) Pass message data on the stack
+// 3) Use a global pointer to serialize data
+// 4) Then don't even implement the IPersist interface
+//    on the fucking class.
+// This table matches the class name (as returned from IPersist::GetName)
+// to message fields. And optionally, the message name. Not all classes
+// use the message name because they shouldn't need it. Only the few broken
+// ones that don't return a useful name in IPersist.
 const ScriptMessage::MetatableDef ScriptMessage::Registry[] = {
-	{"sSimMsg", SimMsgFields},
-	{"sDarkGameModeScrMsg", DarkGameModeMsgFields},
-	{"sAIModeChangeMsg", AIModeChangeMsgFields},
-	{"sAIAlertnessMsg", AIAlertnessMsgFields},
-	{"sAIHighAlertMsg", AIAlertnessMsgFields},
-	{"sAIResultMsg", AIResultMsgFields},
-	{"sAIObjActResultMsg", AIObjActResultMsgFields},
-	{"sAIPatrolPointMsg", AIPatrolPointMsgFields},
-	{"sAISignalMsg", AISignalMsgFields},
-	{"sAttackMsg", AttackMsgFields},
-	{"sCombineScrMsg", CombineScrMsgFields},
-	{"sContainedScrMsg", ContainedScrMsgFields},
-	{"sContainerScrMsg", ContainerScrMsgFields},
-	{"sDamageScrMsg", DamageScrMsgFields},
-	{"sDiffScrMsg", DiffScrMsgFields},
-	{"sDoorMsg", DoorMsgFields},
-	{"sFrobMsg", FrobMsgFields},
-	{"sBodyMsg", BodyMsgFields},
-	{"sPickStateScrMsg", PickStateScrMsgFields},
-	{"sPhysMsg", PhysMsgFields},
-	{"sRoomMsg", RoomMsgFields},
-	{"sSlayMsg", SlayMsgFields},
-	{"sSchemaDoneMsg", SchemaDoneMsgFields},
-	{"sSoundDoneMsg", SchemaDoneMsgFields},
-	{"sStimMsg", StimMsgFields},
-	{"sScrTimerMsg", ScrTimerMsgFields},
-	{"sTweqMsg", TweqMsgFields},
-	{"sWaypointMsg", WaypointMsgFields},
-	{"sMovingTerrainMsg", MovingTerrainMsgFields},
-	{"sQuestMsg", QuestMsgFields},
-	{"sMediumTransMsg", MediumTransMsgFields},
-	{"sYorNMsg", YorNMsgFields},
-	{"sKeypadMsg", KeypadMsgFields},
-	{"sDHNotifyNullMsg", DarkHookNullFields},
-	{"sDHNotifyPropMsg", DarkHookPropFields},
-	{"sDHNotifyRelMsg", DarkHookRelFields},
-	{"sDHNotifyObjMsg", DarkHookObjFields},
-	{"sDHNotifyTraitMsg", DarkHookTraitFields},
-	{NULL,NULL}
+	{"sSimMsg", NULL, SimMsgFields},
+	{"sDarkGameModeScrMsg", "DarkGameModeChange", DarkGameModeMsgFields},
+	{"sAIModeChangeMsg", NULL, AIModeChangeMsgFields},
+	{"sAIAlertnessMsg", NULL, AIAlertnessMsgFields},
+	{"sAIHighAlertMsg", NULL, AIAlertnessMsgFields},
+	{"sAIResultMsg", NULL, AIResultMsgFields},
+	{"sAIObjActResultMsg", NULL, AIObjActResultMsgFields},
+	{"sAIPatrolPointMsg", NULL, AIPatrolPointMsgFields},
+	{"sAISignalMsg", NULL, AISignalMsgFields},
+	{"sAttackMsg", NULL, AttackMsgFields},
+	{"sCombineScrMsg", "Combine", CombineScrMsgFields},
+	{"sContainedScrMsg", "Contained", ContainedScrMsgFields},
+	{"sContainerScrMsg", "Container", ContainerScrMsgFields},
+	{"sDamageScrMsg", NULL, DamageScrMsgFields},
+	{"sDiffScrMsg", "Difficulty", DiffScrMsgFields},
+	{"sDoorMsg", NULL, DoorMsgFields},
+	{"sFrobMsg", NULL, FrobMsgFields},
+	{"sBodyMsg", NULL, BodyMsgFields},
+	{"sPickStateScrMsg", "PickStateChange", PickStateScrMsgFields},
+	{"sPhysMsg", NULL, PhysMsgFields},
+	{"sRoomMsg", NULL, RoomMsgFields},
+	{"sSlayMsg", NULL, SlayMsgFields},
+	{"sSchemaDoneMsg", NULL, SchemaDoneMsgFields},
+	{"sSoundDoneMsg", NULL, SchemaDoneMsgFields},
+	{"sStimMsg", NULL, StimMsgFields},
+	{"sScrTimerMsg", NULL, ScrTimerMsgFields},
+	{"sTweqMsg", NULL, TweqMsgFields},
+	{"sWaypointMsg", NULL, WaypointMsgFields},
+	{"sMovingTerrainMsg", NULL, MovingTerrainMsgFields},
+	{"sQuestMsg", NULL, QuestMsgFields},
+	{"sMediumTransMsg", NULL, MediumTransMsgFields},
+	{"sYorNMsg", NULL, YorNMsgFields},
+	{"sKeypadMsg", NULL, KeypadMsgFields},
+	{"sDHNotifyNullMsg", NULL, DarkHookNullFields},
+	{"sDHNotifyPropMsg", NULL, DarkHookPropFields},
+	{"sDHNotifyRelMsg", NULL, DarkHookRelFields},
+	{"sDHNotifyObjMsg", NULL, DarkHookObjFields},
+	{"sDHNotifyTraitMsg", NULL, DarkHookTraitFields},
+	{NULL,NULL,NULL}
 };
+#define NUMBER_OF_HACKS 6
 
 void ScriptMessage::push(sScrMsg* msg)
 {
@@ -95,30 +107,34 @@ void ScriptMessage::push(sScrMsg* msg)
 	m_lua.getField(s_ClassName, LUA_REGISTRYINDEX);
 	if (m_lua.getField(pszClass).isNil())
 	{
-		if (0 == strcasecmp(pszClass, "sDHNotifyMsg"))
+		m_lua.pop().getField(s_HackName, LUA_REGISTRYINDEX).getField(msg->message);
+		if (m_lua.isNil())
 		{
-			m_lua.pop();
-			switch (static_cast<sDHNotifyMsg*>(msg)->typeDH)
+			m_lua.pop(2);
+			if (0 == strcmp(pszClass, "sDHNotifyMsg"))
 			{
-			case kDH_Property:
-				m_lua.getField("sDHNotifyPropMsg");
-				break;
-			case kDH_Relation:
-				m_lua.getField("sDHNotifyRelMsg");
-				break;
-			case kDH_Object:
-				m_lua.getField("sDHNotifyObjMsg");
-				break;
-			case kDH_Trait:
-				m_lua.getField("sDHNotifyTraitMsg");
-				break;
-			default:
-				m_lua.getField("sDHNotifyNullMsg");
-				break;
+				switch (static_cast<sDHNotifyMsg*>(msg)->typeDH)
+				{
+				case kDH_Property:
+					m_lua.getField("sDHNotifyPropMsg");
+					break;
+				case kDH_Relation:
+					m_lua.getField("sDHNotifyRelMsg");
+					break;
+				case kDH_Object:
+					m_lua.getField("sDHNotifyObjMsg");
+					break;
+				case kDH_Trait:
+					m_lua.getField("sDHNotifyTraitMsg");
+					break;
+				default:
+					m_lua.getField("sDHNotifyNullMsg");
+					break;
+				}
 			}
+			else
+				m_lua.getField("");
 		}
-		else
-			m_lua.pop().getField("");
 	}
 	m_lua.setMetatable(iMsg).setTop(iMsg);
 	//msg->AddRef();
@@ -126,11 +142,12 @@ void ScriptMessage::push(sScrMsg* msg)
 
 void ScriptMessage::Init(State& S)
 {
+	int iHackRegistry = S.createTableI(0, NUMBER_OF_HACKS+1);
 	int iRegistry = S.createTableI(0, (sizeof(Registry)/sizeof(Registry[0]))+1);
 	Metafields(S, ScrMsgFields);
 	S.copy();
 	Metatable(S, 1);
-	S.copy().setField("sScrMsg", iRegistry);
+	//S.copy().setField("sScrMsg", iRegistry);
 	S.setField("", iRegistry);
 	for (const MetatableDef* mt = Registry;
 		mt->name; mt++)
@@ -138,9 +155,12 @@ void ScriptMessage::Init(State& S)
 		S.copy();
 		Metafields(S, mt->fields);
 		Metatable(S, 2);
+		if (mt->message)
+			S.copy().setField(mt->message, iHackRegistry);
 		S.setField(mt->name, iRegistry);
 	}
 	S.pop().setField(s_ClassName, LUA_REGISTRYINDEX);
+	S.setField(s_HackName, LUA_REGISTRYINDEX);
 }
 
 void ScriptMessage::Metafields(State& S, const MetafieldDef* F)

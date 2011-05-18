@@ -48,6 +48,7 @@ public:
 	static void Init(luax::State& S);
 
 	static const char s_ClassName[];
+	static const char s_HackName[];
 
 	static sScrMsg* Check(luax::State& S, int arg = 1);
 
@@ -79,6 +80,7 @@ private:
 	struct MetatableDef
 	{
 		const char* name;
+		const char* message;
 		const MetafieldDef* fields;
 	};
 
