@@ -236,7 +236,7 @@ buildno: $(LUA_SRCS) $(LGS_SRCS) $(OSM_SRCS) $(SHELL_SRCS)
 	else echo 1 >buildno; fi
 
 $(bindir)/exports.o: $(bindir)/ScriptModule.o
-	$(DLLTOOL) $(DLLFLAGS) --output-exp $@ $^
+	$(DLLTOOL) $(DLLFLAGS) --dllname lgs.osm --output-exp $@ $^
 
 lgs.osm: $(LGS_OBJS) $(OSM_OBJS) $(RES_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ1)
 	$(LD) $(LDFLAGS) -Wl,--image-base=0x11400000 $(LDDEBUG) $(LIBDIRS) -o $@ $^ $(LIBS)
