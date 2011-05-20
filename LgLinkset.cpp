@@ -114,7 +114,7 @@ int LinkSet::Iter(Handle L)
 	}
 	long link = self->link;
 	// Iter via __pairs will get 2 args, via __call has 3 args.
-	if (!S.isNoneOrNil(-1))
+	if (S.getTop() > 1 && !S.isNoneOrNil(-1))
 	{
 		link = S.toInteger(-1);
 		if (link != self->link)
