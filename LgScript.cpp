@@ -104,8 +104,8 @@ LgScript::LgScript(ScriptInterpreter* pInterpreter, const char* pszName, int iOb
 	 .copy().setMetatable();  // metatable(index) = index
 	S.push(pszName).setField("classname");  // index.classname = pszName
 	S.push(iObjId).setField("objid");  // index.objid = iObjId
-	S.copy(iScript);  // script mt index script
-	S.getMetatable(s_ClassName)
+	S.copy(iScript)  // script mt index script
+	 .getMetatable(s_ClassName)
 	 .push(IndexMethod, 2)  // script mt index indexfunc<script,methods>
 	 .setField("__index");  // script mt index
 	S.setField("__index", iMT);  // script mt

@@ -170,11 +170,11 @@ void ScriptMessage::Metafields(State& S, const MetafieldDef* F)
 	S.createTable(0,f-F);
 	for (f = F; f->name; f++)
 	{
+		S.push(Integer(f->nup));
 		if (f->sup)
-			S.push(const_cast<void*>(f->sup))
-			 .push(Integer(f->nup)).push(f->func, 2);
+			S.push(const_cast<void*>(f->sup)).push(f->func, 2);
 		else
-			S.push(Integer(f->nup)).push(f->func, 1);
+			S.push(f->func, 1);
 		S.setField(f->name);
 	}
 }
@@ -620,18 +620,18 @@ const char* const ScriptMessage::DarkHookEvents[] = {
 };
 const ScriptMessage::MetafieldDef ScriptMessage::DarkHookPropFields[] = {
 	{"typeDH", getConstantField, 0, "Property"},
-	{"event", getEnumeratedField, offsetof(sDarkPropMsg,event)+sizeof(eDarkHookType), DarkHookEvents},
-	{"PropName", getStringField, offsetof(sDarkPropMsg,pszPropName)+sizeof(eDarkHookType), NULL},
-	{"idObj", getIntegerField, offsetof(sDarkPropMsg,idObj)+sizeof(eDarkHookType), NULL},
+	{"event", getEnumeratedField, offsetof(sDarkPropMsg,event)+offsetof(sDHNotifyMsg,sProp), DarkHookEvents},
+	{"PropName", getStringField, offsetof(sDarkPropMsg,pszPropName)+offsetof(sDHNotifyMsg,sProp), NULL},
+	{"idObj", getIntegerField, offsetof(sDarkPropMsg,idObj)+offsetof(sDHNotifyMsg,sProp), NULL},
 	{NULL, NULL, 0, NULL}
 };
 const ScriptMessage::MetafieldDef ScriptMessage::DarkHookRelFields[] = {
 	{"typeDH", getConstantField, 0, "Relation"},
-	{"event", getEnumeratedField, offsetof(sDarkRelMsg,event)+sizeof(eDarkHookType), DarkHookEvents},
-	{"RelName", getStringField, offsetof(sDarkRelMsg,pszRelName)+sizeof(eDarkHookType), NULL},
-	{"LinkId", getIntegerField, offsetof(sDarkRelMsg,lLinkId)+sizeof(eDarkHookType), NULL},
-	{"LinkSource", getIntegerField, offsetof(sDarkRelMsg,iLinkSource)+sizeof(eDarkHookType), NULL},
-	{"LinkDest", getIntegerField, offsetof(sDarkRelMsg,iLinkDest)+sizeof(eDarkHookType), NULL},
+	{"event", getEnumeratedField, offsetof(sDarkRelMsg,event)+offsetof(sDHNotifyMsg,sRel), DarkHookEvents},
+	{"RelName", getStringField, offsetof(sDarkRelMsg,pszRelName)+offsetof(sDHNotifyMsg,sRel), NULL},
+	{"LinkId", getIntegerField, offsetof(sDarkRelMsg,lLinkId)+offsetof(sDHNotifyMsg,sRel), NULL},
+	{"LinkSource", getIntegerField, offsetof(sDarkRelMsg,iLinkSource)+offsetof(sDHNotifyMsg,sRel), NULL},
+	{"LinkDest", getIntegerField, offsetof(sDarkRelMsg,iLinkDest)+offsetof(sDHNotifyMsg,sRel), NULL},
 	{NULL, NULL, 0, NULL}
 };
 const char* const ScriptMessage::DarkHookObjEvents[] = {
@@ -639,8 +639,8 @@ const char* const ScriptMessage::DarkHookObjEvents[] = {
 };
 const ScriptMessage::MetafieldDef ScriptMessage::DarkHookObjFields[] = {
 	{"typeDH", getConstantField, 0, "Object"},
-	{"event", getEnumeratedField, offsetof(sDarkObjMsg,event)+sizeof(eDarkHookType), DarkHookObjEvents},
-	{"idObj", getIntegerField, offsetof(sDarkObjMsg,idObj)+sizeof(eDarkHookType), NULL},
+	{"event", getEnumeratedField, offsetof(sDarkObjMsg,event)+offsetof(sDHNotifyMsg,sObj), DarkHookObjEvents},
+	{"idObj", getIntegerField, offsetof(sDarkObjMsg,idObj)+offsetof(sDHNotifyMsg,sObj), NULL},
 	{NULL, NULL, 0, NULL}
 };
 const char* const ScriptMessage::DarkHookTraitEvents[] = {
@@ -648,9 +648,9 @@ const char* const ScriptMessage::DarkHookTraitEvents[] = {
 };
 const ScriptMessage::MetafieldDef ScriptMessage::DarkHookTraitFields[] = {
 	{"typeDH", getConstantField, 0, "Trait"},
-	{"event", getEnumeratedField, offsetof(sDarkTraitMsg,event)+sizeof(eDarkHookType), DarkHookTraitEvents},
-	{"idObj", getIntegerField, offsetof(sDarkTraitMsg,idObj)+sizeof(eDarkHookType), NULL},
-	{"idSubj", getIntegerField, offsetof(sDarkTraitMsg,idSubj)+sizeof(eDarkHookType), NULL},
+	{"event", getEnumeratedField, offsetof(sDarkTraitMsg,event)+offsetof(sDHNotifyMsg,sTrait), DarkHookTraitEvents},
+	{"idObj", getIntegerField, offsetof(sDarkTraitMsg,idObj)+offsetof(sDHNotifyMsg,sTrait), NULL},
+	{"idSubj", getIntegerField, offsetof(sDarkTraitMsg,idSubj)+offsetof(sDHNotifyMsg,sTrait), NULL},
 	{NULL, NULL, 0, NULL}
 };
 
