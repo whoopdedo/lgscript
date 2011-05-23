@@ -1364,7 +1364,7 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 		for (; !q->Done(); q->Next())
 		{
 			q->Link(&sl);
-			g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,
+			ScriptModule::PostMessage(sl.source,sl.dest,arg2,
 					cMultiParm::Undef,cMultiParm::Undef,cMultiParm::Undef,kScrMsgPostToOwner);
 		}
 	}
@@ -1384,7 +1384,7 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 			if (!S.isNil())
 			{
 				ScriptMultiParm ret(S);
-				g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,ret,
+				ScriptModule::PostMessage(sl.source,sl.dest,arg2,ret,
 						cMultiParm::Undef,cMultiParm::Undef,kScrMsgPostToOwner);
 			}
 			S.pop();
@@ -1417,7 +1417,7 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 					buf[0] = '\0';
 					StructTools->UnparseSimple(sd,p,buf,sizeof(buf));
 					if (0 == strcmp(buf,arg4))
-						g_pScriptManager->PostMessage2(sl.source,
+						ScriptModule::PostMessage(sl.source,
 								sl.dest,arg2,
 								arg4,
 								cMultiParm::Undef,
@@ -1427,7 +1427,7 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 				else
 				{
 					if (arg4[0] == '\0')
-						g_pScriptManager->PostMessage2(sl.source,
+						ScriptModule::PostMessage(sl.source,
 								sl.dest,arg2,
 								arg4,
 								cMultiParm::Undef,
@@ -1445,7 +1445,7 @@ int LinkService::BroadcastOnAllLinks(luax::Handle L)
 			for (; !q->Done(); q->Next())
 			{
 				q->Link(&sl);
-				g_pScriptManager->PostMessage2(sl.source,sl.dest,arg2,arg4,
+				ScriptModule::PostMessage(sl.source,sl.dest,arg2,arg4,
 						cMultiParm::Undef,cMultiParm::Undef,kScrMsgPostToOwner);
 			}
 		}

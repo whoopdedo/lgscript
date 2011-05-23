@@ -67,6 +67,64 @@ int ScriptModule::MPrintf(const char* pszFormat, ...)
 	return g_pfnMPrintf("%s", psz);
 }
 
+void ScriptModule::PostMessage(int iSrc, int iDest, const char* psz,
+				const cMultiParm& data1, const cMultiParm& data2, const cMultiParm& data3, ulong flags)
+{
+#ifdef __GNUC__
+	asm("push edi\n"
+	"\tmov edi,esp\n"
+	"\tsub esp,0x20\n"
+	"\tmov eax,%7\n"
+	"\tmov dword ptr [esp+0x1C],eax\n"
+	"\tmov eax,%0\n"
+	"\tmov edx,dword ptr [eax]\n"
+	"\tmov ecx,%6\n"
+	"\tmov dword ptr [esp+0x18],ecx\n"
+	"\tmov ecx,%5\n"
+	"\tmov dword ptr [esp+0x14],ecx\n"
+	"\tmov ecx,%4\n"
+	"\tmov dword ptr [esp+0x10],ecx\n"
+	"\tmov ecx,%3\n"
+	"\tmov dword ptr [esp+0xC],ecx\n"
+	"\tmov ecx,%2\n"
+	"\tmov dword ptr [esp+0x8],ecx\n"
+	"\tmov ecx,%1\n"
+	"\tmov dword ptr [esp+0x4],ecx\n"
+	"\tmov dword ptr [esp],eax\n"
+	"\tcall dword ptr [edx+0x6C]\n"
+	"\tmov esp,edi\n"
+	"\tpop edi\n"
+	:: "m"(g_pScriptManager), "g"(iSrc), "g"(iDest), "g"(psz), "g"(&data1), "g"(&data2), "g"(&data3), "g"(flags)
+	);
+#else
+	_asm {
+		push edi
+		mov  edi,esp
+		sub  esp,0x20
+		mov  eax,flags
+		mov  dword ptr [esp+0x1C],eax
+		mov  eax,g_pScriptManager
+		mov  edx,dword ptr [eax]
+		mov  ecx,&data3
+		mov  dword ptr [esp+0x18],ecx
+		mov  ecx,&data2
+		mov  dword ptr [esp+0x14],ecx
+		mov  ecx,&data1
+		mov  dword ptr [esp+0x10],ecx
+		mov  ecx,psz
+		mov  dword ptr [esp+0xC],ecx
+		mov  ecx,dword ptr iDest
+		mov  dword ptr [esp+0x8],ecx
+		mov  ecx,dword ptr iSrc
+		mov  dword ptr [esp+0x4],ecx
+		mov  dword ptr [esp],eax
+		call dword ptr [edx+0x6C]
+		mov  esp,edi
+		pop  edi
+	}
+#endif
+}
+
 ScriptModule::~ScriptModule()
 {
 	delete m_pScriptInterpreter;

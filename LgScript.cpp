@@ -253,7 +253,7 @@ void LgScript::PostMessage(int iDest, const char* pszMessage,
 				const cMultiParm& mpData3,
 				unsigned long flags)
 {
-	g_pScriptManager->PostMessage2(ObjId(), iDest, pszMessage, mpData1, mpData2, mpData3, flags);
+	ScriptModule::PostMessage(ObjId(), iDest, pszMessage, mpData1, mpData2, mpData3, flags);
 }
 
 tScrTimer LgScript::SetTimedMessage(const char* pszName, unsigned long iTime, eScrTimedMsgKind eType,
@@ -408,7 +408,7 @@ int LgScript::PostMessageMethod(Handle L)
 		const char* pszMsg = S.checkString(3,NULL);
 		unsigned long flags = S.checkFlags(7, MsgFlags, "");
 		ScriptMultiParm mp1(S), mp2(S), mp3(S);
-		g_pScriptManager->PostMessage2(iFrom, iTo, pszMsg,
+		ScriptModule::PostMessage(iFrom, iTo, pszMsg,
 			mp1.pop(4), mp2.pop(5), mp3.pop(6), flags);
 		return 0;
 	}

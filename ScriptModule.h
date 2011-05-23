@@ -68,4 +68,5 @@ public:
 	unsigned long BuildScripts(void);
 
 	static int MPrintf(const char*, ...);
+	static void PostMessage(int, int, const char*, const cMultiParm&, const cMultiParm&, const cMultiParm&, ulong);
 };
