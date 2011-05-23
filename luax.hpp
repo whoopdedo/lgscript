@@ -196,6 +196,7 @@ namespace luax
 	protected:
 		State() : Lua() { };
 
+		static void* realloc(void* ud, void* ptr, size_t osize, size_t nsize);
 		static int panic(Handle L);
 		ErrCode raise(ErrCode err);
 		const char* errMsg(void)
@@ -802,7 +803,12 @@ namespace luax
 		};
 		MainState()
 		{
-			m_L = luaL_newstate();
+			m_L = lua_newstate(realloc, NULL);
+			lua_atpanic(m_L, panic);
+		};
+		MainState(Alloc allocf, void* ud = NULL)
+		{
+			m_L = lua_newstate(allocf, ud);
 			lua_atpanic(m_L, panic);
 		};
 	};

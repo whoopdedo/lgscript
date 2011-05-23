@@ -24,6 +24,8 @@
  *****************************************************************************/
 #define LUAX_INLINE
 #include "luax.h"
+#include <new>
+#include <cstring>
 
 namespace luax
 {
@@ -83,6 +85,28 @@ const char* StringDump::read(State&, size_t *sz)
 	return m_S.c_str();
 };
 
+
+void* State::realloc(void*, void* ptr, size_t osize, size_t nsize)
+{
+	if (!nsize)
+	{
+		::operator delete(ptr, std::nothrow);
+		return NULL;
+	}
+	if (!osize)
+	{
+		void* nptr = ::operator new(nsize, std::nothrow);
+		return nptr;
+	}
+	if (size_t(osize - nsize) <= sizeof(int)*4)
+		return ptr;  // nsize < osize and difference is small
+	void* nptr = ::operator new(nsize, std::nothrow);
+	if (!nptr)
+		return NULL;
+	memcpy(nptr, ptr, std::min(osize,nsize));
+	::operator delete(ptr, std::nothrow);
+	return nptr;
+}
 
 int State::panic(Handle L)
 {

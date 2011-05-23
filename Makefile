@@ -244,7 +244,7 @@ lgs.osm: $(LGS_OBJS) $(OSM_OBJS) $(RES_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ1)
 lgscript.exe: $(SHELL_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ2)
 	$(CXX) $(LDDEBUG) -o $@ $^
 
-$(bindir)/LgShell.o: $(srcdir)/LgShell.cpp
+$(bindir)/LgShell.o: $(srcdir)/LgShell.cpp $(LUAX)
 	$(CXX) $(LUAFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF2) $(LUAINC) -o $@ -c $(srcdir)/LgShell.cpp
 
 $(bindir)/luax2.o: $(srcdir)/luax.cpp $(srcdir)/luax.hpp $(srcdir)/luax.h
