@@ -86,7 +86,7 @@ private:
 	IDebugMalloc* m_dballoc;
 	ulong m_numallocs;
 	ulong m_grosstotal;
-	char m_module[256];
+	char* m_module;
 #endif
 
 	struct AllocRecord

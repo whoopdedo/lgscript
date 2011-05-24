@@ -102,9 +102,13 @@ IMalloc* cMemoryAllocator::AttachMalloc(IMalloc* allocator, const char* module)
 	allocator->QueryInterface(IID_IMalloc, reinterpret_cast<void**>(&m_alloc));
 #ifdef DEBUG
 	allocator->QueryInterface(IID_IDebugMalloc, reinterpret_cast<void**>(&m_dballoc));
-	strncpy(m_module, "cMemoryAllocator [", sizeof(m_module)-1);
-	strncat(m_module, module, sizeof(m_module)-sizeof("cMemoryAllocator []"));
-	strncat(m_module, "]", 2);
+	// Because the module may be unloaded, a static buffer will cause problems.
+	// This memory will never be freed, a small price to pay.
+	ulong namelen = strlen(module) + sizeof("cMemoryAllocator []");
+	m_module = static_cast<char*>(allocator->Alloc(namelen));
+	strcpy(m_module, "cMemoryAllocator [");
+	strcat(m_module, module);
+	strcat(m_module, "]");
 #endif
 	assert(m_alloc != NULL);
 	return this;
