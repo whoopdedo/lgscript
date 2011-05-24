@@ -108,6 +108,10 @@ private:
 public:
 	static void Init(luax::State& S);
 
+private:
+	static int CreateLink(luax::Handle);
+	static int CreateObject(luax::Handle);
+
 };
 
 /**

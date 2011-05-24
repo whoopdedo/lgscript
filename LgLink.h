@@ -1,5 +1,5 @@
 /******************************************************************************
- *  LgLinkset.h
+ *  LgLink.h
  *
  *  This file is part of LgScript
  *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
@@ -18,63 +18,47 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
-#ifndef LGLINKSET_H
-#define LGLINKSET_H
+#ifndef LGLINK_H
+#define LGLINK_H
 
 #include <lg/config.h>
 #include <lg/objstd.h>
 #include <lg/types.h>
 #include <lg/links.h>
+#include <lg/interface.h>
 
 #include "luax.h"
 
 namespace Lgs
 {
 
-class LinkSet
+class LgLink
 {
-	ILinkQuery* query;
 	long link;
-	int source, dest;
-	short flavor;
+	SInterface<IRelation> rel;
 
 	void Refresh(void);
+	bool Refresh(sLink&);
 
 	static const luax::Registry Methods[];
 
-	static int Pairs(luax::Handle L);
-	static int Iter(luax::Handle L);
+	static int Index(luax::Handle L);
+	static int LinkGet(luax::Handle L);
+	static int GetData(luax::Handle L);
+	static int SetData(luax::Handle L);
 
-	static LinkSet* Check(luax::State& S, int arg);
+	static LgLink* Check(luax::State& S, int arg);
 
-	LinkSet() : query(NULL) { };
-	LinkSet(const LinkSet&) { };
+	LgLink(const LgLink& l) : link(l.link) { Refresh(); };
 public:
-	~LinkSet() { if (query) query->Release(); };
-	LinkSet(linkset& l)
-		: link(0), source(0), dest(0), flavor(0)
-	{
-		query = l.query;
-		if (query)
-			query->AddRef();
-	};
-	LinkSet(ILinkQuery* q)
-		: link(0), source(0), dest(0), flavor(0)
-	{
-		query = q;
-		if (query)
-			query->AddRef();
-	};
+	~LgLink() { };
+	LgLink() : link(0) { };
+	LgLink(long l) : link(l) { Refresh(); };
+
+	static long pop(luax::State& S, int arg);
+
 	static void Init(luax::State& S);
-
 	static const char s_ClassName[];
-
-	static int Release(luax::Handle L);
-	static int Done(luax::Handle L);
-	static int Next(luax::Handle L);
-	static int Id(luax::Handle L);
-	static int Link(luax::Handle L);
-	static int Data(luax::Handle L);
 
 private:
 	void* operator new(size_t);
@@ -84,6 +68,6 @@ public:
 	void operator delete(void*);
 };
 
-}
+} // namespace Lgs
 
 #endif

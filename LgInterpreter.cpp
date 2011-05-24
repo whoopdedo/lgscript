@@ -25,6 +25,8 @@
 #include "LgScript.h"
 #include "LgMessage.h"
 #include "LgLinkset.h"
+#include "LgLink.h"
+#include "LgObject.h"
 #include "LgServices.h"
 #include "ScriptModule.h"
 
@@ -164,6 +166,8 @@ ScriptInterpreter::ScriptInterpreter(bool bEditor)
 	LgScript::Init(*m_pLua);
 	ScriptMessage::Init(*m_pLua);
 	LinkSet::Init(*m_pLua);
+	LgLink::Init(*m_pLua);
+	LgObject::Init(*m_pLua);
 	ScriptServices::Init(*m_pLua);
 	m_pLua->gcRestart();
 #ifdef DEBUG

@@ -1,5 +1,5 @@
 /******************************************************************************
- *  LgLinkset.h
+ *  LgObject.h
  *
  *  This file is part of LgScript
  *  Copyright (C) 2011 Tom N Harris <telliamed@whoopdedo.org>
@@ -18,63 +18,53 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  *****************************************************************************/
-#ifndef LGLINKSET_H
-#define LGLINKSET_H
+#ifndef LGOBJECT_H
+#define LGOBJECT_H
 
 #include <lg/config.h>
 #include <lg/objstd.h>
 #include <lg/types.h>
-#include <lg/links.h>
+#include <lg/scrmanagers.h>
+#include <lg/objects.h>
+#include <lg/interface.h>
 
 #include "luax.h"
 
 namespace Lgs
 {
 
-class LinkSet
+class LgObject
 {
-	ILinkQuery* query;
-	long link;
-	int source, dest;
-	short flavor;
-
-	void Refresh(void);
+	int id;
 
 	static const luax::Registry Methods[];
+	static const luax::Registry Properties[];
 
-	static int Pairs(luax::Handle L);
-	static int Iter(luax::Handle L);
+	static int Index(luax::Handle L);
 
-	static LinkSet* Check(luax::State& S, int arg);
+	static LgObject* Check(luax::State& S, int arg);
 
-	LinkSet() : query(NULL) { };
-	LinkSet(const LinkSet&) { };
+	static int ExistsMethod(luax::Handle L);
+	static int HasDonorIntrinsicallyMethod(luax::Handle L);
+	static int HasDonorMethod(luax::Handle L);
+	static int SetNameMethod(luax::Handle L);
+	static int ArchetypeProperty(luax::Handle L);
+	static int FacingProperty(luax::Handle L);
+	static int IdProperty(luax::Handle L);
+	static int NameProperty(luax::Handle L);
+	static int PositionProperty(luax::Handle L);
+
+	LgObject(const LgObject& o) : id(o.id) { };
 public:
-	~LinkSet() { if (query) query->Release(); };
-	LinkSet(linkset& l)
-		: link(0), source(0), dest(0), flavor(0)
-	{
-		query = l.query;
-		if (query)
-			query->AddRef();
-	};
-	LinkSet(ILinkQuery* q)
-		: link(0), source(0), dest(0), flavor(0)
-	{
-		query = q;
-		if (query)
-			query->AddRef();
-	};
+	~LgObject() { };
+	LgObject() : id(0) { };
+	LgObject(int i) : id(i) { };
+	LgObject(const char* name);
+
+	static int pop(luax::State& S, int arg);
+
 	static void Init(luax::State& S);
-
 	static const char s_ClassName[];
-
-	static int Release(luax::Handle L);
-	static int Done(luax::Handle L);
-	static int Next(luax::Handle L);
-	static int Id(luax::Handle L);
-	static int Link(luax::Handle L);
-	static int Data(luax::Handle L);
 
 private:
 	void* operator new(size_t);
@@ -84,6 +74,6 @@ public:
 	void operator delete(void*);
 };
 
-}
+} // namespace Lgs
 
 #endif

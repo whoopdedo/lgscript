@@ -25,6 +25,8 @@
 #include "ScriptModule.h"
 #include "LgMultiParm.h"
 #include "LgLinkset.h"
+#include "LgLink.h"
+#include "LgObject.h"
 #include "utils.h"
 #include "mod/modlib.h"
 
@@ -189,7 +191,11 @@ const ScriptServices::ServiceDef ScriptServices::SShock2Services[] = {
 
 void ScriptServices::Init(luax::State& S)
 {
-	static const luax::Registry module[] = { {NULL,NULL} };
+	static const luax::Registry module[] = {
+		{"link",CreateLink},
+		{"object",CreateObject},
+		{NULL,NULL}
+	};
 	const ServiceDef* srv;
 
 	IUnknown* pIFace;
@@ -221,6 +227,23 @@ void ScriptServices::Init(luax::State& S)
 		 .setField(srv->name);
 	}
 	S.pop();
+}
+
+int ScriptServices::CreateLink(luax::Handle L)
+{
+	luax::State S(L);
+	new(S) LgLink(S.optInteger(1));
+	return 1;
+}
+
+int ScriptServices::CreateObject(luax::Handle L)
+{
+	luax::State S(L);
+	if (S.getType(1) == luax::TString)
+		new(S) LgObject(S.asString(1));
+	else
+		new(S) LgObject(S.optInteger(1));
+	return 1;
 }
 
 int ActReactService::React(luax::Handle L)

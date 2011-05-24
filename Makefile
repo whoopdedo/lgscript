@@ -173,6 +173,8 @@ LGS_SRCS = \
 	$(srcdir)/LgMultiParm.cpp $(srcdir)/LgMultiParm.h \
 	$(srcdir)/LgStructData.cpp $(srcdir)/LgStructData.h \
 	$(srcdir)/LgLinkset.cpp $(srcdir)/LgLinkset.h \
+	$(srcdir)/LgLink.cpp $(srcdir)/LgLink.h \
+	$(srcdir)/LgObject.cpp $(srcdir)/LgObject.h \
 	$(srcdir)/LgServices.cpp $(srcdir)/LgServices.h \
 	$(srcdir)/LgServices1.cpp \
 	$(srcdir)/LgServices2.cpp \
@@ -193,6 +195,8 @@ LGS_OBJS = \
 	$(bindir)/LgMultiParm.o \
 	$(bindir)/LgStructData.o \
 	$(bindir)/LgLinkset.o \
+	$(bindir)/LgLink.o \
+	$(bindir)/LgObject.o \
 	$(bindir)/LgServices.o \
 	$(bindir)/LgServices1.o \
 	$(bindir)/LgServices2.o \
@@ -268,7 +272,10 @@ $(bindir)/LgMultiParm.o: $(srcdir)/LgMultiParm.cpp $(srcdir)/LgMultiParm.h $(LUA
 $(bindir)/LgStructData.o: $(srcdir)/LgStructData.cpp $(srcdir)/LgStructData.h $(LUAMOD)/modlib.h $(LUAX)
 $(bindir)/LgMessage.o: $(srcdir)/LgMessage.cpp $(srcdir)/LgMessage.h $(srcdir)/LgMultiParm.h $(LUAMOD)/modlib.h $(LUAX)
 $(bindir)/LgLinkset.o: $(srcdir)/LgLinkset.cpp $(srcdir)/LgLinkset.h $(srcdir)/LgStructData.h $(LUAX)
-$(bindir)/LgServices.o: $(srcdir)/LgServices.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(srcdir)/LgLinkset.h $(LUAMOD)/modlib.h $(LUAX)
+$(bindir)/LgLink.o: $(srcdir)/LgLink.cpp $(srcdir)/LgLink.h $(srcdir)/LgStructData.h $(LUAX)
+$(bindir)/LgObject.o: $(srcdir)/LgObject.cpp $(srcdir)/LgObject.h $(LUAX)
+$(bindir)/LgServices.o: $(srcdir)/LgServices.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h \
+		$(srcdir)/LgLinkset.h $(srcdir)/LgLink.h $(srcdir)/LgObject.h $(LUAMOD)/modlib.h $(LUAX)
 
 $(bindir)/LgServices1.o: $(srcdir)/LgServices1.cpp $(srcdir)/LgServices.h $(srcdir)/LgMultiParm.h $(LUAMOD)/modlib.h $(LUAX)
 	$(CXX) $(CXXFLAGS) $(CXXDEBUG) $(LUADEBUG) $(LUADEF) $(DEFINES) $(GAME1) $(INCLUDES) -o $@ -c $(srcdir)/LgServices1.cpp
