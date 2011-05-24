@@ -76,10 +76,22 @@ void LgScript::Environment(State& S)
 	S.setMetatable();  // metatable(env) = mt
 }
 
-LgScript::~LgScript()
+int LgScript::ReleaseMethod(Handle L)
 {
+	State S(L);
+	LgScript* pScript = Check(S, 1);
+	delete pScript;
+	return 0;
+}
+
+void LgScript::DisposeRef(void)
+{
+	char szName[256];
+	int iObjId;
 	try
 	{
+		strncpy(szName, Name(), sizeof(szName));
+		iObjId = ObjId();
 		if (m_iLastMsg >= 0)
 			EndScript();
 		m_pInterpreter->UnloadScript(Name(), ObjId());
@@ -87,8 +99,12 @@ LgScript::~LgScript()
 	catch (...)
 	{
 		ScriptModule::MPrintf("!!! Unhandled exception in destructor [%s:%d]\n",
-			Name(), ObjId());
+			szName, iObjId);
 	}
+}
+
+LgScript::~LgScript()
+{
 }
 
 LgScript::LgScript(ScriptInterpreter* pInterpreter, const char* pszName, int iObjId)
@@ -99,7 +115,8 @@ LgScript::LgScript(ScriptInterpreter* pInterpreter, const char* pszName, int iOb
 	// Script object will be at top of stack
 	State S(pInterpreter->Lua());
 	int iScript = S.getTop();
-	int iMT = S.createTableI(0, 3);  // script mt
+	int iMT = S.createTableI(0, 4);  // script mt
+	S.push(ReleaseMethod).setField("__gc");
 	S.createTable(0, 3)  // script mt index
 	 .copy().setMetatable();  // metatable(index) = index
 	S.push(pszName).setField("classname");  // index.classname = pszName

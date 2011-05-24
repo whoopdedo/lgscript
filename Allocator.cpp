@@ -102,9 +102,9 @@ IMalloc* cMemoryAllocator::AttachMalloc(IMalloc* allocator, const char* module)
 	allocator->QueryInterface(IID_IMalloc, reinterpret_cast<void**>(&m_alloc));
 #ifdef DEBUG
 	allocator->QueryInterface(IID_IDebugMalloc, reinterpret_cast<void**>(&m_dballoc));
-	strncpy(m_module, "cMemoryAllocator [", 255);
-	strncat(m_module, module, 255);
-	strncat(m_module, "]", 255);
+	strncpy(m_module, "cMemoryAllocator [", sizeof(m_module)-1);
+	strncat(m_module, module, sizeof(m_module)-sizeof("cMemoryAllocator []"));
+	strncat(m_module, "]", 2);
 #endif
 	assert(m_alloc != NULL);
 	return this;

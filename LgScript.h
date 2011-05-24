@@ -78,6 +78,7 @@ protected:
 	static LgScript* Check(luax::State&,int);
 	static void Environment(luax::State&);
 
+	virtual void DisposeRef(void);
 	friend class ScriptInterpreter;
 	void* operator new(size_t, luax::State&);
 	void operator delete(void*, luax::State&);
@@ -91,6 +92,7 @@ public:
 private:
 	static const luax::Registry Methods[];
 
+	static int ReleaseMethod(luax::Handle);
 	static int IndexMethod(luax::Handle);
 	static int SendMessageMethod(luax::Handle);
 	static int PostMessageMethod(luax::Handle);
