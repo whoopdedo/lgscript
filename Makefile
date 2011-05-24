@@ -180,7 +180,9 @@ LGS_SRCS = \
 	$(srcdir)/strtocolor.cpp $(srcdir)/utils.h \
 	$(srcdir)/version.rc
 OSM_SRCS = $(srcdir)/ScriptModule.cpp $(srcdir)/ScriptModule.h \
-	$(srcdir)/Script.cpp $(srcdir)/Script.h $(srcdir)/Dll.cpp \
+	$(srcdir)/Script.cpp $(srcdir)/Script.h \
+	$(srcdir)/Allocator.cpp $(srcdir)/Allocator.h \
+	$(srcdir)/Dll.cpp \
 	$(srcdir)/script.rc
 SHELL_SRCS = $(srcdir)/LgShell.cpp \
 	$(srcdir)/shell.rc
@@ -196,7 +198,7 @@ LGS_OBJS = \
 	$(bindir)/LgServices2.o \
 	$(bindir)/LgServices3.o \
 	$(bindir)/strtocolor.o
-OSM_OBJS = $(bindir)/ScriptModule.o $(bindir)/Script.o $(bindir)/Dll.o $(bindir)/exports.o
+OSM_OBJS = $(bindir)/ScriptModule.o $(bindir)/Script.o $(bindir)/Allocator.o $(bindir)/Dll.o $(bindir)/exports.o
 RES_OBJS = $(bindir)/script_res.o
 SHELL_OBJS = $(bindir)/LgShell.o $(bindir)/shell_res.o
 
@@ -239,7 +241,7 @@ $(bindir)/exports.o: $(bindir)/ScriptModule.o
 	$(DLLTOOL) $(DLLFLAGS) --dllname lgs.osm --output-exp $@ $^
 
 lgs.osm: $(LGS_OBJS) $(OSM_OBJS) $(RES_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ1)
-	$(LD) $(LDFLAGS) -Wl,--image-base=0x11400000 $(LDDEBUG) $(LIBDIRS) -o $@ $^ $(LIBS)
+	$(LD) $(LDFLAGS) -Wl,--image-base=0x11600000 $(LDDEBUG) $(LIBDIRS) -o $@ $^ $(LIBS)
 
 lgscript.exe: $(SHELL_OBJS) $(LUAX_OBJ) $(LUA_OBJS) $(LUA_OBJ2)
 	$(CXX) $(LDDEBUG) -o $@ $^
@@ -257,8 +259,9 @@ $(bindir)/script_res.o: $(srcdir)/script.rc $(srcdir)/version.rc buildno
 	$(RC) $(DEFINES) -DBUILD=`cat buildno` -o $@ -i $<
 
 $(bindir)/Dll.o: $(srcdir)/Dll.cpp
+$(bindir)/Allocator.o: $(srcdir)/Allocator.cpp $(srcdir)/Allocator.h
 $(bindir)/Script.o: $(srcdir)/Script.cpp $(srcdir)/Script.h
-$(bindir)/ScriptModule.o: $(srcdir)/ScriptModule.cpp $(srcdir)/ScriptModule.h $(srcdir)/LgInterpreter.h $(LUAX)
+$(bindir)/ScriptModule.o: $(srcdir)/ScriptModule.cpp $(srcdir)/ScriptModule.h $(srcdir)/Allocator.h $(srcdir)/LgInterpreter.h $(LUAX)
 $(bindir)/LgInterpreter.o: $(srcdir)/LgInterpreter.cpp $(srcdir)/LgInterpreter.h $(srcdir)/ScriptModule.h $(LUAX)
 $(bindir)/LgScript.o: $(srcdir)/LgScript.cpp $(srcdir)/LgScript.h $(srcdir)/LgInterpreter.h $(srcdir)/ScriptModule.h $(srcdir)/Script.h $(srcdir)/LgMessage.h $(srcdir)/LgMultiParm.h $(LUAX)
 $(bindir)/LgMultiParm.o: $(srcdir)/LgMultiParm.cpp $(srcdir)/LgMultiParm.h $(LUAMOD)/modlib.h $(LUAX)

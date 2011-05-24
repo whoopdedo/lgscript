@@ -20,6 +20,7 @@
  *****************************************************************************/
 
 #include "ScriptModule.h"
+#include "Allocator.h"
 
 #include <exception>
 #include <cstring>
@@ -50,6 +51,9 @@ IScriptMan* g_pScriptManager = NULL;
 volatile MPrintfProc g_pfnMPrintf = NullPrintf;
 
 const char ScriptModule::s_ScriptModuleName[] = "lgs";
+
+cMemoryAllocator g_Allocator;
+ScriptModule  g_ScriptModule;
 
 static int __cdecl NullPrintf(const char*, ...)
 {
@@ -133,6 +137,13 @@ ScriptModule::~ScriptModule()
 		delete[] p->pszClass;
 	if (m_pszName != s_ScriptModuleName)
 		delete[] m_pszName;
+	m_ScriptsArray.clear();
+#ifdef DEBUG
+	g_pfnMPrintf("cMemoryAllocator [%s]: Current %ld blocks for %ld bytes\n",
+			s_ScriptModuleName, g_Allocator.CountBlocks(), g_Allocator.CountSize());
+	g_pfnMPrintf("cMemoryAllocator [%s]: Total %ld allocations avg %ld bytes\n",
+			s_ScriptModuleName, g_Allocator.CountAlloc(), g_Allocator.CountAverage());
+#endif
 }
 
 ScriptModule::ScriptModule()
@@ -297,8 +308,6 @@ unsigned long ScriptModule::BuildScripts(void)
 	return m_ScriptsArray.size();
 }
 
-ScriptModule  g_ScriptModule;
-
 IScript* __cdecl ScriptModule::ScriptFactory(const char* pszName, int iObjId)
 {
 	IScript* pScript;
@@ -333,13 +342,7 @@ ScriptModuleInit (const char* pszName,
 	*pOutInterface = NULL;
 
 	g_pScriptManager = pScriptMan;
-#ifdef _DEBUG
-	pMalloc->QueryInterface(IID_IDebugMalloc, reinterpret_cast<void**>(&g_pMalloc));
-	if (!g_pMalloc)
-		g_pMalloc = pMalloc;
-#else
-	g_pMalloc = pMalloc;
-#endif
+	g_pMalloc = g_Allocator.AttachMalloc(pMalloc, ScriptModule::s_ScriptModuleName);
 
 	if (pfnMPrintf)
 		g_pfnMPrintf = pfnMPrintf;

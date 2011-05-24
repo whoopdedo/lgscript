@@ -186,7 +186,9 @@ LGS_SRCS = \
 	$(srcdir)\strtocolor.cpp $(srcdir)\utils.h \
 	$(srcdir)\version.rc
 OSM_SRCS = $(srcdir)\ScriptModule.cpp $(srcdir)\ScriptModule.h \
-	$(srcdir)\Script.cpp $(srcdir)\Script.h $(srcdir)\Dll.cpp \
+	$(srcdir)\Script.cpp $(srcdir)\Script.h \
+	$(srcdir)\Allocator.cpp $(srcdir)\Allocator.h \
+	$(srcdir)\Dll.cpp \
 	$(srcdir)\script.rc
 SHELL_SRCS = $(srcdir)\LgShell.cpp \
 	$(srcdir)\shell.rc
@@ -202,7 +204,7 @@ LGS_OBJS = \
 	$(bindir)\LgServices2.obj \
 	$(bindir)\LgServices3.obj \
 	$(bindir)\strtocolor.obj
-OSM_OBJS = $(bindir)\ScriptModule.obj $(bindir)\Script.obj $(bindir)\Dll.obj
+OSM_OBJS = $(bindir)\ScriptModule.obj $(bindir)\Script.obj $(bindir)\Allocator.obj $(bindir)\Dll.obj
 SCRIPT_RES = $(bindir)\script.res
 SHELL_OBJS = $(bindir)\LgShell.obj
 SHELL_RES = $(bindir)\shell.res
@@ -257,8 +259,9 @@ $(bindir)\script.res: $(srcdir)\script.rc $(srcdir)\version.rc
 	$(BRC32) -I.;$(BCCROOT)\Include $(DEFINES) -DBUILD=1000 -fo$@ -r $(srcdir)\script.rc
 
 $(bindir)\Dll.obj: $(srcdir)\Dll.cpp
+$(bindir)\Allocator.obj: $(srcdir)\Allocator.cpp $(srcdir)\Allocator.h
 $(bindir)\Script.obj: $(srcdir)\Script.cpp $(srcdir)\Script.h
-$(bindir)\ScriptModule.obj: $(srcdir)\ScriptModule.cpp $(srcdir)\ScriptModule.h $(srcdir)\LgInterpreter.h $(LUAX)
+$(bindir)\ScriptModule.obj: $(srcdir)\ScriptModule.cpp $(srcdir)\ScriptModule.h $(srcdir)\Allocator.h $(srcdir)\LgInterpreter.h $(LUAX)
 $(bindir)\LgInterpreter.obj: $(srcdir)\LgInterpreter.cpp $(srcdir)\LgInterpreter.h $(srcdir)\ScriptModule.h $(LUAX)
 $(bindir)\LgScript.obj: $(srcdir)\LgScript.cpp $(srcdir)\LgScript.h $(srcdir)\LgInterpreter.h $(srcdir)\ScriptModule.h $(srcdir)\Script.h $(srcdir)\LgMessage.h $(srcdir)\LgMultiParm.h $(LUAX)
 $(bindir)\LgMultiParm.obj: $(srcdir)\LgMultiParm.cpp $(srcdir)\LgMultiParm.h $(LUAMOD)\modlib.h $(LUAX)

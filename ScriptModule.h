@@ -34,6 +34,7 @@ extern IScriptMan* g_pScriptManager;
 typedef int (__cdecl *MPrintfProc)(const char*, ...);
 // GCC 3.3 is foolishly trying to optimize away the dereference here.
 extern volatile MPrintfProc g_pfnMPrintf;
+extern "C" Bool __declspec(dllexport) __stdcall ScriptModuleInit(const char*,IScriptMan*,MPrintfProc,IMalloc*,IScriptModule**);
 
 class ScriptModule : public cInterfaceImp<IScriptModule,IID_Def<IScriptModule>,kInterfaceImpStatic>
 {
@@ -53,13 +54,18 @@ protected:
 
 private:
 	char* m_pszName;
-	static const char s_ScriptModuleName[];
 
 	cDynArray<sScrClassDesc> m_ScriptsArray;
 
 	Lgs::ScriptInterpreter* m_pScriptInterpreter;
 
 	static IScript* __cdecl ScriptFactory(const char* pszName, int iObjId);
+
+protected:
+	static const char s_ScriptModuleName[];
+
+	friend Bool ScriptModuleInit(const char*,IScriptMan*,MPrintfProc,IMalloc*,IScriptModule**);
+
 public:
 	virtual ~ScriptModule();
 	ScriptModule();
