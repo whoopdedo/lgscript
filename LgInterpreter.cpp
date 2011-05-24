@@ -133,6 +133,14 @@ int ScriptInterpreter::NoTraceback(Handle L)
 
 ScriptInterpreter::~ScriptInterpreter()
 {
+#ifdef DEBUG
+	m_pLua->gcCollect();
+	Cache();
+	ScriptModule::MPrintf("*** CACHE %d (should be 0)\n", m_pLua->objLen());
+	Instance();
+	ScriptModule::MPrintf("*** INSTANCE %d (should be 0)\n", m_pLua->objLen());
+	ScriptModule::MPrintf("*** GCCOUNT %dKb\n", m_pLua->gcCount());
+#endif
 	delete static_cast<MainState*>(m_pLua);
 }
 
@@ -158,6 +166,10 @@ ScriptInterpreter::ScriptInterpreter(bool bEditor)
 	LinkSet::Init(*m_pLua);
 	ScriptServices::Init(*m_pLua);
 	m_pLua->gcRestart();
+#ifdef DEBUG
+	m_pLua->gcCollect();
+	ScriptModule::MPrintf("*** GCCOUNT %dKb\n", m_pLua->gcCount());
+#endif
 }
 
 void ScriptInterpreter::Init(void)
@@ -187,7 +199,9 @@ IScript* ScriptInterpreter::LoadScript(const char* pszName, int iObjId)
 	int iCache = Cache();  // name nameobjid LGS
 	if (!S->rawGet(iCache, -2).isNil())  // name nameobjid LGS script
 	{
-S->getGlobal("print").push("*** CACHE > ").copy(-5).copy(-4).call(3,0);
+#ifdef DEBUG
+	S->getGlobal("print").push("*** CACHE > ").copy(-5).copy(-4).call(3,0);
+#endif
 		pScript = S->toUserdata(Userdata<IScript>());
 		pScript->AddRef();
 		return pScript;
@@ -203,7 +217,9 @@ S->getGlobal("print").push("*** CACHE > ").copy(-5).copy(-4).call(3,0);
 			ScriptModule::MPrintf("!!! %s\n", S->asString());
 			return NULL;
 		}
-S->getGlobal("print").push("*** CACHE < ").copy(-4).copy(-4).call(3,0);
+#ifdef DEBUG
+	S->getGlobal("print").push("*** CACHE < ").copy(-4).copy(-4).call(3,0);
+#endif
 		S->rawSet(iCache, -2, -1);  // cache[name0] = chunk
 	}
 	S->remove(-2);  // name nameobjid LGS chunk
@@ -214,11 +230,15 @@ S->getGlobal("print").push("*** CACHE < ").copy(-4).copy(-4).call(3,0);
 		// no need to delete script, GC will clean it up
 		return NULL;
 	}
-S->getGlobal("print").push("*** CACHE < ").copy(-6).copy(-5).call(3,0);
+#ifdef DEBUG
+	S->getGlobal("print").push("*** CACHE < ").copy(-6).copy(-5).call(3,0);
+#endif
 	S->rawSet(iCache, -4, -2);  // cache[nameobjid] = script
 	int iScripts = Instance();   // name nameobjid LGS script screnv Registry
 	S->push(Userdata<IScript>(pScript)); // name nameobjid LGS script screnv Registry pointer
-S->getGlobal("print").push("*** INSTANCE < ").copy(-3).copy(-6).call(3,0);
+#ifdef DEBUG
+	S->getGlobal("print").push("*** INSTANCE < ").copy(-3).copy(-6).call(3,0);
+#endif
 	S->copy(-3).rawSet(iScripts); // registry[pointer] = screnv
 	return pScript;
 }
@@ -228,7 +248,9 @@ void ScriptInterpreter::UnloadScript(const char* pszName, int iObjId)
 	Frame S(*m_pLua);
 	S->push(pszName);  // name
 	S->copy().push(iObjId).concat();  // name nameobjid
-S->getGlobal("print").push("*** CACHE X ").copy(-3).call(2,0);
+#ifdef DEBUG
+	S->getGlobal("print").push("*** CACHE X ").copy(-3).call(2,0);
+#endif
 	int iCache = Cache();  // name nameobjid LGS
 	if (S->rawGet(iCache, -2).isNil())  // name nameobjid LGS script
 	{
@@ -239,9 +261,15 @@ S->getGlobal("print").push("*** CACHE X ").copy(-3).call(2,0);
 	IScript* pScript = S->toUserdata(Userdata<IScript>());
 	S->pop();  // name nameobjid LGS
 	S->copy(-2).push(Nil()).rawSet(iCache);  // cache[nameobjid] = nil
-S->getGlobal("print").push("*** CACHE X ").push(Userdata<IScript>(pScript)).call(2,0);
+#ifdef DEBUG
+	S->getGlobal("print").push("*** CACHE X ").push(Userdata<IScript>(pScript)).call(2,0);
+#endif
 	int iScripts = Instance();  // name nameobjid LGS Registry
 	S->push(Userdata<IScript>(pScript)).push(Nil()).rawSet(iScripts); // scripts[pointer] = nil
+#ifdef DEBUG
+	S->gcCollect();
+	ScriptModule::MPrintf("*** GCCOUNT %dKb\n", S->gcCount());
+#endif
 }
 
 // Load script chunk. Name is passed on the stack.
