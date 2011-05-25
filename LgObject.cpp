@@ -93,6 +93,12 @@ int LgObject::pop(State& S, int arg)
 		LgObject* self = S.checkUserdata(arg,Userdata<LgObject>());
 		return self ? self->id : 0;
 	}
+	else if (S.getType(arg) == TString)
+	{
+		SInterface<IObjectSystem> pOS(g_pScriptManager);
+		const char* name = S.asString(arg);
+		return pOS->GetObjectNamed(name);
+	}
 	return S.optInteger(arg);
 }
 
@@ -112,7 +118,6 @@ int LgObject::Index(luax::Handle L)
 int LgObject::ExistsMethod(luax::Handle L)
 {
 	State S(L);
-	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
 	SInterface<IObjectSystem> pOS(g_pScriptManager);
 	S.push(bool(pOS->Exists(obj)));
@@ -122,9 +127,12 @@ int LgObject::ExistsMethod(luax::Handle L)
 int LgObject::HasDonorIntrinsicallyMethod(luax::Handle L)
 {
 	State S(L);
-	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
 	int donor = pop(S,2);
+	if (!obj)
+		return S.argError(1, "invalid object ID");
+	if (!donor)
+		return S.argError(2, "invalid object ID");
 	SInterface<ITraitManager> pTM(g_pScriptManager);
 	S.push(bool(pTM->ObjHasDonorIntrinsically(obj,donor)));
 	return 1;
@@ -133,9 +141,12 @@ int LgObject::HasDonorIntrinsicallyMethod(luax::Handle L)
 int LgObject::HasDonorMethod(luax::Handle L)
 {
 	State S(L);
-	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
 	int donor = pop(S,2);
+	if (!obj)
+		return S.argError(1, "invalid object ID");
+	if (!donor)
+		return S.argError(2, "invalid object ID");
 	SInterface<ITraitManager> pTM(g_pScriptManager);
 	S.push(bool(pTM->ObjHasDonor(obj,donor)));
 	return 1;
@@ -144,9 +155,10 @@ int LgObject::HasDonorMethod(luax::Handle L)
 int LgObject::SetNameMethod(luax::Handle L)
 {
 	State S(L);
-	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
 	const char* name = S.checkString(2,NULL);
+	if (!obj)
+		return S.argError(1, "invalid object ID");
 	SInterface<IObjectSystem> pOS(g_pScriptManager);
 	pOS->NameObject(obj,name);
 	return 0;
@@ -155,8 +167,9 @@ int LgObject::SetNameMethod(luax::Handle L)
 int LgObject::ArchetypeProperty(luax::Handle L)
 {
 	State S(L);
-	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
+	if (!obj)
+		return S.argError(1, "invalid object ID");
 	SInterface<ITraitManager> pTM(g_pScriptManager);
 	new(S) LgObject(pTM->GetArchetype(obj));
 	return 1;
@@ -165,7 +178,6 @@ int LgObject::ArchetypeProperty(luax::Handle L)
 int LgObject::IdProperty(luax::Handle L)
 {
 	State S(L);
-	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
 	S.push(obj);
 	return 1;
@@ -174,8 +186,12 @@ int LgObject::IdProperty(luax::Handle L)
 int LgObject::NameProperty(luax::Handle L)
 {
 	State S(L);
-	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
+	if (!obj)
+	{
+		S.push(Nil());
+		return 1;
+	}
 	SInterface<IObjectSystem> pOS(g_pScriptManager);
 	S.push(pOS->GetName(obj));
 	return 1;
@@ -186,6 +202,11 @@ int LgObject::PositionProperty(luax::Handle L)
 	State S(L);
 	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
+	if (!obj)
+	{
+		S.push(Nil());
+		return 1;
+	}
 	SService<IObjectSrv> pOS(g_pScriptManager);
 	cScrVec ret;
 	pOS->Position(ret,obj);
@@ -198,6 +219,11 @@ int LgObject::FacingProperty(luax::Handle L)
 	State S(L);
 	//LgObject* self = Check(S,1);
 	int obj = pop(S,1);
+	if (!obj)
+	{
+		S.push(Nil());
+		return 1;
+	}
 	SService<IObjectSrv> pOS(g_pScriptManager);
 	cScrVec ret;
 	pOS->Facing(ret,obj);
