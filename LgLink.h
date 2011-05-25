@@ -41,11 +41,16 @@ class LgLink
 	bool Refresh(sLink&);
 
 	static const luax::Registry Methods[];
+	static const luax::Registry Properties[];
 
 	static int Index(luax::Handle L);
 	static int LinkGet(luax::Handle L);
 	static int GetData(luax::Handle L);
 	static int SetData(luax::Handle L);
+	static int IdProperty(luax::Handle L);
+	static int FlavorProperty(luax::Handle L);
+	static int DestProperty(luax::Handle L);
+	static int SourceProperty(luax::Handle L);
 
 	static LgLink* Check(luax::State& S, int arg);
 

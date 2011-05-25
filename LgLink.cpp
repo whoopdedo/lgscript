@@ -53,10 +53,19 @@ const Registry LgLink::Methods[] = {
 	{NULL, NULL}
 };
 
+const Registry LgLink::Properties[] = {
+	{"dest", DestProperty},
+	{"flavor", FlavorProperty},
+	{"id", IdProperty},
+	{"source", SourceProperty},
+	{NULL, NULL}
+};
+
 void LgLink::Init(State& S)
 {
-	S.newMetatable(s_ClassName).registerLib(Methods);
-	S.copy().push(Index,1).setField("__index");
+	S.newMetatable(s_ClassName).registerLib(Methods).copy();
+	S.createTable().registerLib(Properties);
+	S.push(Index,2).setField("__index");
 }
 
 inline LgLink* LgLink::Check(State& S, int arg)
@@ -92,53 +101,60 @@ bool LgLink::Refresh(sLink& sl)
 	return rel->Get(link, &sl);
 }
 
-int LgLink::Index(luax::Handle L)
+int LgLink::Index(Handle L)
 {
 	State S(L);
 	S.setTop(2);
-	if (!S.copy(2).rawGet(Upvalue(1)).isNil())
-		return 1;
-	S.pop();
-	LgLink* self = Check(S,1);
-	const char* key = S.asString(2);
-	if (!key)
+	if (!S.copy(2).rawGet(Upvalue(2)).isNil())
 	{
-		S.push(Nil());
+		S.insert(1).setTop(2).call(1,1);
 		return 1;
 	}
-	if (!strcmp(key, "id"))
-	{
-		S.push(self->link);
-		return 1;
-	}
-	else if (!strcmp(key, "flavor"))
-	{
-		S.push(LINKID_TO_LINKKIND(self->link));
-		return 1;
-	}
-	else if (!strcmp(key, "source"))
-	{
-		sLink ret;
-		if (self->Refresh(ret))
-		{
-			S.push(Integer(ret.source));
-			return 1;
-		}
-	}
-	else if (!strcmp(key, "dest"))
-	{
-		sLink ret;
-		if (self->Refresh(ret))
-		{
-			S.push(Integer(ret.dest));
-			return 1;
-		}
-	}
-	S.push(Nil());
+	S.pop().copy(2).rawGet(Upvalue(1));
 	return 1;
 }
 
-int LgLink::LinkGet(luax::Handle L)
+int LgLink::IdProperty(Handle L)
+{
+	State S(L);
+	LgLink* self = Check(S,1);
+	S.push(self->link);
+	return 1;
+}
+
+int LgLink::FlavorProperty(Handle L)
+{
+	State S(L);
+	LgLink* self = Check(S,1);
+	S.push(LINKID_TO_LINKKIND(self->link));
+	return 1;
+}
+
+int LgLink::SourceProperty(Handle L)
+{
+	State S(L);
+	LgLink* self = Check(S,1);
+	sLink ret;
+	if (self->Refresh(ret))
+		S.push(Integer(ret.source));
+	else
+		S.push(Nil());
+	return 1;
+}
+
+int LgLink::DestProperty(Handle L)
+{
+	State S(L);
+	LgLink* self = Check(S,1);
+	sLink ret;
+	if (self->Refresh(ret))
+		S.push(Integer(ret.dest));
+	else
+		S.push(Nil());
+	return 1;
+}
+
+int LgLink::LinkGet(Handle L)
 {
 	State S(L);
 	LgLink* self = Check(S,1);
@@ -154,7 +170,7 @@ int LgLink::LinkGet(luax::Handle L)
 	return 1;
 }
 
-int LgLink::GetData(luax::Handle L)
+int LgLink::GetData(Handle L)
 {
 	State S(L);
 	LgLink* self = Check(S,1);
@@ -178,7 +194,7 @@ int LgLink::GetData(luax::Handle L)
 	return StructData(S, pDataDesc->szTypeName).push(pData);
 }
 
-int LgLink::SetData(luax::Handle L)
+int LgLink::SetData(Handle L)
 {
 	State S(L);
 	S.setTop(3);
@@ -186,7 +202,7 @@ int LgLink::SetData(luax::Handle L)
 	self->Refresh();
 	if (!self->rel)
 	{
-		return S.error("invalid link");
+		return S.argError(1, "invalid link");
 	}
 	const sRelationDataDesc* pDataDesc = self->rel->DescribeData();
 	char* pData = static_cast<char*>(self->rel->GetData(self->link));
