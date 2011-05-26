@@ -84,12 +84,14 @@ long LgLink::pop(State& S, int arg)
 	return S.optInteger(arg);
 }
 
+SInterface<ILinkManager> LgLink::LinkMan;
+
 void LgLink::Refresh(void)
 {
 	if (link && !rel)
 	{
-		SInterface<ILinkManager> pLM(g_pScriptManager);
-		rel.reset(pLM->GetRelation(LINKID_TO_LINKKIND(link)));
+		LinkMan.set(g_pScriptManager);
+		rel.reset(LinkMan->GetRelation(LINKID_TO_LINKKIND(link)));
 	}
 }
 

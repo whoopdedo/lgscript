@@ -74,10 +74,14 @@ void LgObject::Init(State& S)
 	S.push(Index,2).setField("__index");
 }
 
+SInterface<IObjectSystem> LgObject::ObjSys;
+SInterface<ITraitManager> LgObject::TraitMan;
+SService<IObjectSrv> LgObject::ObjSrv;
+
 LgObject::LgObject(const char* name)
 {
-	SInterface<IObjectSystem> pOS(g_pScriptManager);
-	id = pOS->GetObjectNamed(name);
+	ObjSys.set(g_pScriptManager);
+	id = ObjSys->GetObjectNamed(name);
 }
 
 inline LgObject* LgObject::Check(State& S, int arg)
@@ -95,9 +99,9 @@ int LgObject::pop(State& S, int arg)
 	}
 	else if (S.getType(arg) == TString)
 	{
-		SInterface<IObjectSystem> pOS(g_pScriptManager);
+		ObjSys.set(g_pScriptManager);
 		const char* name = S.asString(arg);
-		return pOS->GetObjectNamed(name);
+		return ObjSys->GetObjectNamed(name);
 	}
 	return S.optInteger(arg);
 }
@@ -119,8 +123,8 @@ int LgObject::ExistsMethod(luax::Handle L)
 {
 	State S(L);
 	int obj = pop(S,1);
-	SInterface<IObjectSystem> pOS(g_pScriptManager);
-	S.push(bool(pOS->Exists(obj)));
+	ObjSys.set(g_pScriptManager);
+	S.push(bool(ObjSys->Exists(obj)));
 	return 1;
 }
 
@@ -133,8 +137,8 @@ int LgObject::HasDonorIntrinsicallyMethod(luax::Handle L)
 		return S.argError(1, "invalid object ID");
 	if (!donor)
 		return S.argError(2, "invalid object ID");
-	SInterface<ITraitManager> pTM(g_pScriptManager);
-	S.push(bool(pTM->ObjHasDonorIntrinsically(obj,donor)));
+	TraitMan.set(g_pScriptManager);
+	S.push(bool(TraitMan->ObjHasDonorIntrinsically(obj,donor)));
 	return 1;
 }
 
@@ -147,8 +151,8 @@ int LgObject::HasDonorMethod(luax::Handle L)
 		return S.argError(1, "invalid object ID");
 	if (!donor)
 		return S.argError(2, "invalid object ID");
-	SInterface<ITraitManager> pTM(g_pScriptManager);
-	S.push(bool(pTM->ObjHasDonor(obj,donor)));
+	TraitMan.set(g_pScriptManager);
+	S.push(bool(TraitMan->ObjHasDonor(obj,donor)));
 	return 1;
 }
 
@@ -159,8 +163,8 @@ int LgObject::SetNameMethod(luax::Handle L)
 	const char* name = S.checkString(2,NULL);
 	if (!obj)
 		return S.argError(1, "invalid object ID");
-	SInterface<IObjectSystem> pOS(g_pScriptManager);
-	pOS->NameObject(obj,name);
+	ObjSys.set(g_pScriptManager);
+	ObjSys->NameObject(obj,name);
 	return 0;
 }
 
@@ -170,8 +174,8 @@ int LgObject::ArchetypeProperty(luax::Handle L)
 	int obj = pop(S,1);
 	if (!obj)
 		return S.argError(1, "invalid object ID");
-	SInterface<ITraitManager> pTM(g_pScriptManager);
-	new(S) LgObject(pTM->GetArchetype(obj));
+	TraitMan.set(g_pScriptManager);
+	new(S) LgObject(TraitMan->GetArchetype(obj));
 	return 1;
 }
 
@@ -192,8 +196,8 @@ int LgObject::NameProperty(luax::Handle L)
 		S.push(Nil());
 		return 1;
 	}
-	SInterface<IObjectSystem> pOS(g_pScriptManager);
-	S.push(pOS->GetName(obj));
+	ObjSys.set(g_pScriptManager);
+	S.push(ObjSys->GetName(obj));
 	return 1;
 }
 
@@ -207,9 +211,9 @@ int LgObject::PositionProperty(luax::Handle L)
 		S.push(Nil());
 		return 1;
 	}
-	SService<IObjectSrv> pOS(g_pScriptManager);
+	ObjSrv.set(g_pScriptManager);
 	cScrVec ret;
-	pOS->Position(ret,obj);
+	ObjSrv->Position(ret,obj);
 	lmod_newvector(L, ret.x, ret.y, ret.z);
 	return 1;
 }
@@ -224,9 +228,9 @@ int LgObject::FacingProperty(luax::Handle L)
 		S.push(Nil());
 		return 1;
 	}
-	SService<IObjectSrv> pOS(g_pScriptManager);
+	ObjSrv.set(g_pScriptManager);
 	cScrVec ret;
-	pOS->Facing(ret,obj);
+	ObjSrv->Facing(ret,obj);
 	lmod_newvector(L, ret.x, ret.y, ret.z);
 	return 1;
 }

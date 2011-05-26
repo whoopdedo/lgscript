@@ -36,6 +36,9 @@ namespace Lgs
 class LgObject
 {
 	int id;
+	static SInterface<IObjectSystem> ObjSys;
+	static SInterface <ITraitManager> TraitMan;
+	static SService<IObjectSrv> ObjSrv;
 
 	static const luax::Registry Methods[];
 	static const luax::Registry Properties[];

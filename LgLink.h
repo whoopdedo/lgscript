@@ -36,6 +36,7 @@ class LgLink
 {
 	long link;
 	SInterface<IRelation> rel;
+	static SInterface<ILinkManager> LinkMan;
 
 	void Refresh(void);
 	bool Refresh(sLink&);
