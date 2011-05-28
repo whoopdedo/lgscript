@@ -439,9 +439,9 @@ void StructData::popField(const sFieldDesc* field, void* data, int arg)
 		}
 		else
 		{
-			v[0] = 0;
-			v[1] = 0;
-			v[2] = 0;
+			v->x = 0;
+			v->y = 0;
+			v->z = 0;
 		}
 		break;
 	}
