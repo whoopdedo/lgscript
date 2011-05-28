@@ -58,12 +58,12 @@ int StructData::push(const void* data)
 		pushField(&m_desc->fields[0], data);
 		return 1;
 	}
-	m_lua.createTable(0, m_desc->num_fields);
-	for (int n = 0; n < m_desc->num_fields; n++)
+	int table = m_lua.createTableI(m_desc->num_fields, 1);
+	for (int n = m_desc->num_fields; n > 0; n--)
 	{
-		m_lua.push(m_desc->fields[n].name, strnlen(m_desc->fields[n].name, sizeof(m_desc->fields->name)));
-		pushField(&m_desc->fields[n], data);
-		m_lua.rawSet();
+		m_lua.push(m_desc->fields[n-1].name, strnlen(m_desc->fields[n-1].name, sizeof(m_desc->fields->name)));
+		pushField(&m_desc->fields[n-1], data);
+		m_lua.copy().rawSetN(n, table).rawSet(table);
 	}
 	return 1;
 }
@@ -228,22 +228,29 @@ int StructData::pop(int arg, void* data)
 		popField(&m_desc->fields[0], data, arg);
 		return 0;
 	}
+
 	m_lua.checkType(arg, TTable);
-	int len = m_lua.objLen(arg);
-	if (len > m_desc->num_fields)
-		len = m_desc->num_fields;
-	for (int n = 0; n < len; n++)
+	m_lua.push(Nil());
+	while (m_lua.next(arg))
 	{
-		if (!m_lua.getTableN(n+1, arg).isNil())
-			popField(&m_desc->fields[n], data, -1);
-		m_lua.pop();
+		if (m_lua.getType(-2) == TNumber)
+		{
+			int n = m_lua.toInteger(-2);
+			if (n > 0 && n <= m_desc->num_fields)
+				popField(&m_desc->fields[n-1], data, -1);
+		}
+		m_lua.pop(1);
 	}
-	for (int n = 0; n < m_desc->num_fields; n++)
+	m_lua.push(Nil());
+	while (m_lua.next(arg))
 	{
-		m_lua.push(m_desc->fields[n].name, strnlen(m_desc->fields[n].name, sizeof(m_desc->fields->name)));
-		if (!m_lua.getTable(arg).isNil())
-			popField(&m_desc->fields[n], data, -1);
-		m_lua.pop();
+		if (m_lua.getType(-2) == TString)
+		{
+			const sFieldDesc* field = SD->GetFieldNamed(m_desc, m_lua.asString(-2));
+			if (field)
+				popField(field, data, -1);
+		}
+		m_lua.pop(1);
 	}
 	return 0;
 }
