@@ -205,15 +205,9 @@ int LgLink::SetData(Handle L)
 	{
 		return S.argError(1, "invalid link");
 	}
-	int arg;
+	int arg = S.getTop() > 2 ? 3 : 2;
 	const char* field = NULL;
-	if (S.getTop() > 2)
-	{
-		arg = 3;
-		field = S.optString(2, NULL, NULL);
-	}
-	else
-		arg = 2;
+	S.checkAny(arg);
 	const sRelationDataDesc* pDataDesc = self->rel->DescribeData();
 	void* pData = self->rel->GetData(self->link);
 	if (!pDataDesc || pDataDesc->uiTypeSize == 0)
@@ -225,8 +219,11 @@ int LgLink::SetData(Handle L)
 	{
 		pData = S.newUserdata(pDataDesc->uiTypeSize);
 	}
-	if (field != NULL)
+	if (arg == 3)
+	{
+		field = S.optString(2, NULL, NULL);
 		StructData(S, pDataDesc->szTypeName).pop(arg, pData, field);
+	}
 	else
 		StructData(S, pDataDesc->szTypeName).pop(arg, pData);
 	self->rel->SetData(self->link, pData);

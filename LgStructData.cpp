@@ -234,13 +234,14 @@ int StructData::pop(int arg, void* data)
 		len = m_desc->num_fields;
 	for (int n = 0; n < len; n++)
 	{
-		if (!m_lua.getTableN(arg, n+1).isNil())
+		if (!m_lua.getTableN(n+1, arg).isNil())
 			popField(&m_desc->fields[n], data, -1);
 		m_lua.pop();
 	}
 	for (int n = 0; n < m_desc->num_fields; n++)
 	{
-		if (!m_lua.push(m_desc->fields[n].name).getTable(arg).isNil())
+		m_lua.push(m_desc->fields[n].name, strnlen(m_desc->fields[n].name, sizeof(m_desc->fields->name)));
+		if (!m_lua.getTable(arg).isNil())
 			popField(&m_desc->fields[n], data, -1);
 		m_lua.pop();
 	}
