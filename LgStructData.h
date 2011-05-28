@@ -36,15 +36,18 @@ class StructData
 public:
 	StructData(luax::State& L, const char* D);
 
-	int push(const char* data);
-	int push(const char* data, const char* name);
+	int push(const void* data);
+	int push(const void* data, const char* name);
+	int pop(int arg, void* data);
+	int pop(int arg, void* data, const char* name);
 
 private:
 	luax::State& m_lua;
-	SInterface<IStructDescTools> m_sd;
 	const sStructDesc* m_desc;
+	static SInterface<IStructDescTools> SD;
 
-	void pushField(const sFieldDesc* field, const char* data);
+	void pushField(const sFieldDesc* field, const void* data);
+	void popField(const sFieldDesc* field, void* data, int arg);
 };
 
 } // namespace Lgs

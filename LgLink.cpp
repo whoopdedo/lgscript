@@ -183,7 +183,7 @@ int LgLink::GetData(Handle L)
 		return 1;
 	}
 	const sRelationDataDesc* pDataDesc = self->rel->DescribeData();
-	const char* pData = static_cast<const char*>(self->rel->GetData(self->link));
+	const void* pData = self->rel->GetData(self->link);
 	if (!pDataDesc || pDataDesc->uiTypeSize == 0 || !pData)
 	{
 		// No data.
@@ -199,15 +199,23 @@ int LgLink::GetData(Handle L)
 int LgLink::SetData(Handle L)
 {
 	State S(L);
-	S.setTop(3);
 	LgLink* self = Check(S,1);
 	self->Refresh();
 	if (!self->rel)
 	{
 		return S.argError(1, "invalid link");
 	}
+	int arg;
+	const char* field = NULL;
+	if (S.getTop() > 2)
+	{
+		arg = 3;
+		field = S.optString(2, NULL, NULL);
+	}
+	else
+		arg = 2;
 	const sRelationDataDesc* pDataDesc = self->rel->DescribeData();
-	char* pData = static_cast<char*>(self->rel->GetData(self->link));
+	void* pData = self->rel->GetData(self->link);
 	if (!pDataDesc || pDataDesc->uiTypeSize == 0)
 	{
 		// No data.
@@ -215,11 +223,12 @@ int LgLink::SetData(Handle L)
 	}
 	if (!pData)
 	{
-		pData = static_cast<char*>(S.newUserdata(pDataDesc->uiTypeSize));
+		pData = S.newUserdata(pDataDesc->uiTypeSize);
 	}
-	const char* field = S.optString(2, NULL, NULL);
-	//if (field != NULL)
-	//	StructData(S, pDataDesc->szTypeName).pop(3, pData, field);
-	//StructData(S, pDataDesc->szTypeName).pop(3, pData);
+	if (field != NULL)
+		StructData(S, pDataDesc->szTypeName).pop(arg, pData, field);
+	else
+		StructData(S, pDataDesc->szTypeName).pop(arg, pData);
+	self->rel->SetData(self->link, pData);
 	return 0;
 }

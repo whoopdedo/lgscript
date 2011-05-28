@@ -23,4 +23,12 @@
 
 int strtocolor(const char* str);
 
+inline ulong makecolor(unsigned char r, unsigned char g, unsigned char b)
+{
+        return ((ulong)r) | ((ulong)g << 8) | ((ulong)b << 16);
+}
+inline unsigned char getred(ulong c) { return (unsigned char)(c & 0xFF); }
+inline unsigned char getgreen(ulong c) { return (unsigned char)(c >> 8 & 0xFF); }
+inline unsigned char getblue(ulong c) { return (unsigned char)(c >> 16 & 0xFF); }
+
 #endif

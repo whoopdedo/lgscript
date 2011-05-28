@@ -25,6 +25,7 @@
 #include <lg/objstd.h>
 #include <lg/types.h>
 #include <lg/scrmanagers.h>
+#include <lg/scrservices.h>
 #include <lg/objects.h>
 #include <lg/interface.h>
 
