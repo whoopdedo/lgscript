@@ -38,6 +38,7 @@ typedef struct lvector lvector;
 #define LVECTOR_EPSILON		1e-10
 
 LUA_API lvector* lmod_newvector (lua_State *L, lua_Number x, lua_Number y, lua_Number z);
+LUA_API lvector* lmod_tovector (lua_State *L, int arg);
 
 #define LLIST_NAME		"list"
 

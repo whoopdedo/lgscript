@@ -28,6 +28,20 @@
 #include "lauxlib.h"
 #include "mod/modlib.h"
 
+LUA_API lvector* lmod_tovector (lua_State *L, int arg) {
+  lvector* vec = (lvector*)lua_touserdata(L, arg);
+  if (vec != NULL) {
+    if (lua_getmetatable(L, arg)) {
+      lua_getfield(L, LUA_REGISTRYINDEX, LVECTOR_NAME);
+      if (!lua_rawequal(L, -1, -2)) {
+        vec = NULL;
+      }
+      lua_pop(L, 2);
+    }
+  }
+  return vec;
+}
+
 LUA_API lvector* lmod_newvector (lua_State *L, lua_Number x, lua_Number y, lua_Number z) {
   lvector* vec = (lvector*)lua_newuserdata(L, sizeof(lvector));
   lua_getfield(L, LUA_REGISTRYINDEX, LVECTOR_NAME);

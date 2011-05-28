@@ -331,28 +331,62 @@ void StructData::popField(const sFieldDesc* field, void* data, int arg)
 	//	elem = *reinterpret_cast<char**>(elem);
 	case kFieldTypeString:
 	{
-		strncpy(elem, m_lua.asString(arg), field->size);
+		const char* s = m_lua.asString(arg);
+		if (!s)
+			s = "";
+		strncpy(elem, s, field->size);
 		break;
 	}
 	case kFieldTypePoint:
 	{
 		float* v = reinterpret_cast<float*>(elem);
-		const lvector* varg = reinterpret_cast<const lvector*>(m_lua.checkUserdata(arg,LVECTOR_NAME));
-		v[0] = varg->v.x; v[1] = varg->v.y;
+		const lvector* varg = lmod_tovector(m_lua.L(), arg);
+		if (varg)
+		{
+			v[0] = varg->v.x;
+			v[1] = varg->v.y;
+		}
+		else
+		{
+			v[0] = 0;
+			v[1] = 0;
+		}
 		break;
 	}
 	case kFieldTypeVector:
 	{
 		mxs_vector* v = reinterpret_cast<mxs_vector*>(elem);
-		const lvector* varg = reinterpret_cast<const lvector*>(m_lua.checkUserdata(arg,LVECTOR_NAME));
-		v->x = varg->v.x; v->y = varg->v.y; v->z = varg->v.z;
+		const lvector* varg = lmod_tovector(m_lua.L(), arg);
+		if (varg)
+		{
+			v->x = varg->v.x;
+			v->y = varg->v.y;
+			v->z = varg->v.z;
+		}
+		else
+		{
+			v->x = 0;
+			v->y = 0;
+			v->z = 0;
+		}
 		break;
 	}
 	case kFieldTypeDoubleVec:
 	{
 		double* v = reinterpret_cast<double*>(elem);
-		const lvector* varg = reinterpret_cast<const lvector*>(m_lua.checkUserdata(arg,LVECTOR_NAME));
-		v[0] = varg->v.x; v[1] = varg->v.y; v[2] = varg->v.z;
+		const lvector* varg = lmod_tovector(m_lua.L(), arg);
+		if (varg)
+		{
+			v[0] = varg->v.x;
+			v[1] = varg->v.y;
+			v[2] = varg->v.z;
+		}
+		else
+		{
+			v[0] = 0;
+			v[1] = 0;
+			v[2] = 0;
+		}
 		break;
 	}
 	case kFieldTypeFloat:
@@ -373,10 +407,19 @@ void StructData::popField(const sFieldDesc* field, void* data, int arg)
 	case kFieldTypeFixVec:
 	{
 		long *v = reinterpret_cast<long*>(elem);
-		const lvector* varg = reinterpret_cast<const lvector*>(m_lua.checkUserdata(arg,LVECTOR_NAME));
-		v[0] = varg->v.x * 65536.5f;
-		v[1] = varg->v.y * 65536.5f;
-		v[2] = varg->v.z * 65536.5f;
+		const lvector* varg = lmod_tovector(m_lua.L(), arg);
+		if (varg)
+		{
+			v[0] = varg->v.x * 65536.5f;
+			v[1] = varg->v.y * 65536.5f;
+			v[2] = varg->v.z * 65536.5f;
+		}
+		else
+		{
+			v[0] = 0;
+			v[1] = 0;
+			v[2] = 0;
+		}
 		break;
 	}
 	case kFieldTypeAng:
@@ -387,10 +430,19 @@ void StructData::popField(const sFieldDesc* field, void* data, int arg)
 	case kFieldTypeAngVec:
 	{
 		mxs_angvec* v = reinterpret_cast<mxs_angvec*>(elem);
-		const lvector* varg = reinterpret_cast<const lvector*>(m_lua.checkUserdata(arg,LVECTOR_NAME));
-		v->x = MXS_RAD2ANG(varg->v.x);
-		v->y = MXS_RAD2ANG(varg->v.y);
-		v->z = MXS_RAD2ANG(varg->v.z);
+		const lvector* varg = lmod_tovector(m_lua.L(), arg);
+		if (varg)
+		{
+			v->x = MXS_RAD2ANG(varg->v.x);
+			v->y = MXS_RAD2ANG(varg->v.y);
+			v->z = MXS_RAD2ANG(varg->v.z);
+		}
+		else
+		{
+			v[0] = 0;
+			v[1] = 0;
+			v[2] = 0;
+		}
 		break;
 	}
 	case kFieldTypeRGBA:

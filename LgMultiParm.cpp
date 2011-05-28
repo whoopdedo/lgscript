@@ -72,17 +72,9 @@ const cMultiParm& ScriptMultiParm::pop(int ix)
 		break;
 	case TUserdata:
 	{
-		bool bIsVector = false;
-		if (!m_lua.getMetatable(ix).isNil())
+		const lvector* v = lmod_tovector(m_lua.L(), ix);
+		if (v)
 		{
-			m_lua.getField(LVECTOR_NAME, LUA_REGISTRYINDEX);
-			bIsVector = m_lua.isRawEqual();
-			m_lua.pop();
-		}
-		m_lua.pop();
-		if (bIsVector)
-		{
-			const lvector* v = m_lua.toUserdata(Userdata<lvector>(),ix);
 			cScrVec sv(v->v.x, v->v.y, v->v.z);
 			m_data = sv;
 		}
